@@ -51,7 +51,6 @@ class CacheService {
       });
 
       this.redis.on('connect', () => {
-        console.log('[CACHE] Redis connected - caching enabled');
         this.isEnabled = true;
       });
 
@@ -79,13 +78,10 @@ class CacheService {
     try {
       const cached = await this.redis.get(key);
       if (cached) {
-        console.log(`[CACHE HIT] ${key}`);
         return JSON.parse(cached);
       }
-      console.log(`[CACHE MISS] ${key}`);
       return null;
     } catch (error) {
-      console.error('[CACHE ERROR]', error);
       return null;
     }
   }
@@ -99,9 +95,7 @@ class CacheService {
     try {
       const ttlSeconds = ttl || this.TTL.PLAYERS;
       await this.redis.setex(key, ttlSeconds, JSON.stringify(data));
-      console.log(`[CACHE SET] ${key} (TTL: ${ttlSeconds}s)`);
     } catch (error) {
-      console.error('[CACHE ERROR]', error);
     }
   }
 
@@ -113,9 +107,7 @@ class CacheService {
 
     try {
       await this.redis.del(key);
-      console.log(`[CACHE INVALIDATE] ${key}`);
     } catch (error) {
-      console.error('[CACHE ERROR]', error);
     }
   }
 
@@ -129,10 +121,8 @@ class CacheService {
       const keys = await this.redis.keys(`*${pattern}*`);
       if (keys.length > 0) {
         await this.redis.del(...keys);
-        console.log(`[CACHE INVALIDATE PATTERN] ${pattern} (${keys.length} keys)`);
       }
     } catch (error) {
-      console.error('[CACHE ERROR]', error);
     }
   }
 
@@ -144,9 +134,7 @@ class CacheService {
 
     try {
       await this.redis.flushdb();
-      console.log('[CACHE CLEAR ALL]');
     } catch (error) {
-      console.error('[CACHE ERROR]', error);
     }
   }
 
@@ -170,7 +158,6 @@ class CacheService {
   async disconnect(): Promise<void> {
     if (this.redis) {
       await this.redis.quit();
-      console.log('[CACHE] Redis disconnected');
     }
   }
 }

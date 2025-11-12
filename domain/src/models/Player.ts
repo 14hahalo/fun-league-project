@@ -34,4 +34,4 @@ export interface Player {
 }
 
 // Default password for new players
-export const DEFAULT_PLAYER_PASSWORD = "player123";
+export const DEFAULT_PLAYER_PASSWORD = process.env.PLAYERPASS ;

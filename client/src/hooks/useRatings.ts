@@ -13,15 +13,12 @@ export const useRatings = (gameId?: string) => {
 
   // Fetch ratings for a specific game
   const fetchGameRatings = useCallback(async (gId: string) => {
-    console.log(`[useRatings] Fetching ratings for game: ${gId}`);
     setLoading(true);
     setError(null);
     try {
       const data = await ratingApi.getGameRatings(gId);
-      console.log(`[useRatings] Received ratings data:`, data);
       setGameRatings(data);
     } catch (err) {
-      console.error(`[useRatings] Error fetching ratings:`, err);
       setError(err instanceof Error ? err.message : "Failed to fetch ratings");
     } finally {
       setLoading(false);

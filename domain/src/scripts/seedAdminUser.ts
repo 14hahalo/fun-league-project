@@ -15,7 +15,7 @@ import { hashPassword } from '../utils/password';
 const ADMIN_DATA = {
   nickname: 'admin',
   email: 'admin@funleague.com',
-  password: 'admin123', // Change this to your desired admin password
+  password: process.env.ADMINPASS, // Change this to your desired admin password
   firstName: 'Admin',
   lastName: 'User',
   role: PlayerRole.ADMIN,
@@ -25,7 +25,6 @@ const ADMIN_DATA = {
 
 const seedAdminUser = async () => {
   try {
-    console.log('🌱 Starting admin user seed...\n');
 
     const playersCollection = db.collection('players');
 
@@ -36,17 +35,13 @@ const seedAdminUser = async () => {
       .get();
 
     if (!adminQuery.empty) {
-      console.log('⚠️  Admin user already exists with nickname:', ADMIN_DATA.nickname);
-      console.log('Skipping seed...');
       process.exit(0);
     }
 
     // Hash the admin password
-    console.log('🔐 Hashing admin password...');
-    const hashedPassword = await hashPassword(ADMIN_DATA.password);
+    const hashedPassword = await hashPassword(ADMIN_DATA.password!);
 
     // Create admin user
-    console.log('👤 Creating admin user...');
     const adminRef = await playersCollection.add({
       nickname: ADMIN_DATA.nickname,
       email: ADMIN_DATA.email,
@@ -64,19 +59,9 @@ const seedAdminUser = async () => {
       updatedAt: new Date(),
     });
 
-    console.log('\n✅ Admin user created successfully!');
-    console.log('\n📋 Admin User Details:');
-    console.log('  ID:', adminRef.id);
-    console.log('  Nickname:', ADMIN_DATA.nickname);
-    console.log('  Email:', ADMIN_DATA.email);
-    console.log('  Password:', ADMIN_DATA.password);
-    console.log('  Role:', ADMIN_DATA.role);
-    console.log('  Needs Password Change:', ADMIN_DATA.needsPasswordChange);
-    console.log('\n🚀 You can now login with these credentials!');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding admin user:', error);
     process.exit(1);
   }
 };

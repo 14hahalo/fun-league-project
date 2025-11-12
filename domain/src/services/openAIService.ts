@@ -3,9 +3,6 @@ import { db } from '../config/firebase';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
-if (!apiKey) {
-  console.error('⚠️  WARNING: OPENAI_API_KEY is not set in environment variables!');
-}
 
 const openai = new OpenAI({
   apiKey: apiKey,
@@ -27,7 +24,6 @@ export const openAIService = {
     };
   }> {
     try {
-      console.log(`🔍 Fetching data for ${playerIds.length} players...`);
 
       if (playerIds.length !== 10) {
         throw new Error('Exactly 10 players are required');
@@ -93,8 +89,6 @@ export const openAIService = {
         };
       });
 
-      console.log(`   Prepared ${playerProfiles.length} player profiles`);
-
       // Build prompt
       const prompt = `10 oyuncuyu 2 dengeli basketbol takımına ayır. Her takımda 5 oyuncu olmalı. Takımlar mümkün olduğunca dengeli olmalı (toplam yetenek, pozisyonlar, vb.).
 
@@ -125,8 +119,6 @@ Lütfen şu formatta cevap ver:
 **DENGE ANALİZİ:**
 [Kısa açıklama: Neden bu takımlar dengeli? Her takımın güçlü yönleri neler?]`;
 
-      console.log(`🤖 Calling OpenAI API for team balancing...`);
-
       // Call OpenAI API with economical settings
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -156,16 +148,6 @@ Lütfen şu formatta cevap ver:
       const inputCost = (promptTokens / 1_000_000) * 0.150;
       const outputCost = (completionTokens / 1_000_000) * 0.600;
       const totalCost = inputCost + outputCost;
-
-      console.log('✅ OpenAI API call successful');
-      console.log(`   Token Usage:`);
-      console.log(`     - Prompt Tokens: ${promptTokens}`);
-      console.log(`     - Completion Tokens: ${completionTokens}`);
-      console.log(`     - Total Tokens: ${totalTokens}`);
-      console.log(`   Cost Breakdown:`);
-      console.log(`     - Input Cost: $${inputCost.toFixed(6)}`);
-      console.log(`     - Output Cost: $${outputCost.toFixed(6)}`);
-      console.log(`     - Total Cost: $${totalCost.toFixed(6)}`);
 
       // Parse team assignments from response
       const teamA: string[] = [];
@@ -215,7 +197,6 @@ Lütfen şu formatta cevap ver:
         },
       };
     } catch (error) {
-      console.error('Error building balanced teams:', error);
       throw new Error('Failed to build balanced teams');
     }
   },
@@ -225,7 +206,6 @@ Lütfen şu formatta cevap ver:
    */
   async generateMatchAnalysis(gameId: string): Promise<string> {
     try {
-      console.log(`🔍 Fetching data for game ${gameId}...`);
 
       // Fetch all necessary data
       const [playerStats, teamStats, game] = await Promise.all([
@@ -234,21 +214,15 @@ Lütfen şu formatta cevap ver:
         db.collection('games').doc(gameId).get(),
       ]);
 
-      console.log(`   Found ${playerStats.size} player stats`);
-      console.log(`   Found ${teamStats.size} team stats`);
 
       if (!game.exists) {
         throw new Error('Game not found');
       }
 
       const gameData = game.data();
-      console.log(`   Game: ${gameData?.gameNumber} - ${gameData?.teamAScore} vs ${gameData?.teamBScore}`);
 
-      // Get unique player IDs
       const playerIds = playerStats.docs.map(doc => doc.data().playerId);
-      console.log(`   Fetching player names for ${playerIds.length} players...`);
 
-      // Fetch player names from players collection
       const playerDocs = await Promise.all(
         playerIds.map(playerId => db.collection('players').doc(playerId).get())
       );
@@ -265,8 +239,6 @@ Lütfen şu formatta cevap ver:
           playerNameMap.set(playerIds[index], 'Unknown');
         }
       });
-
-      console.log(`   Fetched ${playerNameMap.size} player names`);
 
       // Parse player stats with fetched player names
       const players = playerStats.docs.map((doc) => {
@@ -332,8 +304,6 @@ Lütfen şu başlıklar altında detaylı bir analiz yaz:
 
 Analiz profesyonel, bilgilendirici ve okuyucuyu cezbedici olmalı. Markdown formatında yaz.`;
 
-      console.log(`🤖 Calling OpenAI API...`);
-
       // Call OpenAI API
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -352,15 +322,6 @@ Analiz profesyonel, bilgilendirici ve okuyucuyu cezbedici olmalı. Markdown form
       });
 
       const analysis = completion.choices[0]?.message?.content || 'Analiz oluşturulamadı.';
-
-      // Log token usage
-      const usage = completion.usage;
-      console.log('✅ OpenAI API call successful');
-      console.log(`   Generated ${analysis.length} characters of analysis`);
-      console.log(`   Token Usage:`);
-      console.log(`     - Prompt Tokens: ${usage?.prompt_tokens || 0}`);
-      console.log(`     - Completion Tokens: ${usage?.completion_tokens || 0}`);
-      console.log(`     - Total Tokens: ${usage?.total_tokens || 0}`);
 
       return analysis;
     } catch (error) {

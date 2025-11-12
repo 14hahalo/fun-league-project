@@ -78,7 +78,6 @@ export const playerRatingService = {
    * Get all ratings for a specific game with averages and MVP
    */
   async getGameRatings(gameId: string): Promise<GameRatingsDTO> {
-    console.log(`[PlayerRatingService] Fetching ratings for game: ${gameId}`);
 
     // Get all ratings for this game
     const ratingsSnapshot = await db
@@ -86,7 +85,6 @@ export const playerRatingService = {
       .where("gameId", "==", gameId)
       .get();
 
-    console.log(`[PlayerRatingService] Found ${ratingsSnapshot.size} ratings in Firebase`);
 
     // Get all players who played in this game
     const playerStatsSnapshot = await db
@@ -98,10 +96,8 @@ export const playerRatingService = {
       (doc) => (doc.data() as PlayerStats).playerId
     );
 
-    console.log(`[PlayerRatingService] Found ${playerIds.length} players in game`);
 
     if (playerIds.length === 0) {
-      console.log(`[PlayerRatingService] No players found for game ${gameId}`);
       return {
         gameId,
         ratings: [],
@@ -148,7 +144,6 @@ export const playerRatingService = {
     playerIds.forEach((playerId) => {
       const player = playersMap.get(playerId);
       if (!player) {
-        console.log(`[PlayerRatingService] Player ${playerId} not found in playersMap`);
         return;
       }
 
@@ -167,8 +162,6 @@ export const playerRatingService = {
       });
     });
 
-    console.log(`[PlayerRatingService] Built ${ratings.length} rating entries`);
-
     // Sort by average rank (ascending - lower rank is better)
     ratings.sort((a, b) => a.averageRating - b.averageRating);
 
@@ -177,10 +170,7 @@ export const playerRatingService = {
     if (ratings.length > 0 && ratings[0].totalVotes > 0) {
       ratings[0].isMVP = true;
       mvp = ratings[0];
-      console.log(`[PlayerRatingService] MVP determined: ${mvp.playerName} with avg rank ${mvp.averageRating}`);
-    } else {
-      console.log(`[PlayerRatingService] No MVP - no votes found`);
-    }
+    } 
 
     return {
       gameId,
@@ -241,6 +231,5 @@ export const playerRatingService = {
     const deletePromises = ratingsSnapshot.docs.map((doc) => doc.ref.delete());
     await Promise.all(deletePromises);
 
-    console.log(`   Deleted ${ratingsSnapshot.size} player ratings`);
   },
 };

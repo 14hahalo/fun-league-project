@@ -75,26 +75,19 @@ class AuthService {
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
     try {
-      console.log('authService.changePassword called with userId:', userId);
       const playerDoc = await db.collection(COLLECTION_NAME).doc(userId).get();
 
       if (!playerDoc.exists) {
-        console.error('User not found:', userId);
         throw new Error('User not found');
       }
 
-      console.log('User found, validating password...');
-
       // Validate new password
       if (changePasswordDto.newPassword.length < 6) {
-        console.error('Password too short');
         throw new Error('New password must be at least 6 characters long');
       }
 
-      console.log('Password valid, hashing...');
       // Hash new password
       const hashedNewPassword = await hashPassword(changePasswordDto.newPassword);
-      console.log('Password hashed, updating database...');
 
       // Update password and clear needsPasswordChange flag
       await playerDoc.ref.update({
@@ -103,9 +96,7 @@ class AuthService {
         updatedAt: new Date(),
       });
 
-      console.log('Password updated successfully in database');
     } catch (error) {
-      console.error('authService.changePassword error:', error);
       throw new Error(`Password change failed: ${error}`);
     }
   }

@@ -28,7 +28,6 @@ class CacheManager {
     // Check memory cache first (fastest)
     const memoryEntry = this.memoryCache.get(key);
     if (memoryEntry && !this.isExpired(memoryEntry)) {
-      console.log(`[CACHE HIT - Memory] ${key}`);
       return memoryEntry.data;
     }
 
@@ -40,18 +39,13 @@ class CacheManager {
         if (!this.isExpired(entry)) {
           // Restore to memory cache for faster subsequent access
           this.memoryCache.set(key, entry);
-          console.log(`[CACHE HIT - LocalStorage] ${key}`);
           return entry.data;
         } else {
-          // Expired - remove from localStorage
           localStorage.removeItem(key);
         }
       }
-    } catch (error) {
-      console.error('[CACHE ERROR]', error);
-    }
+    } catch (error) {}
 
-    console.log(`[CACHE MISS] ${key}`);
     return null;
   }
 
@@ -72,10 +66,7 @@ class CacheManager {
     // Store in localStorage
     try {
       localStorage.setItem(key, JSON.stringify(entry));
-      console.log(`[CACHE SET] ${key} (TTL: ${ttl / 1000}s)`);
-    } catch (error) {
-      console.error('[CACHE ERROR] Failed to save to localStorage:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -91,7 +82,6 @@ class CacheManager {
   invalidate(key: string): void {
     this.memoryCache.delete(key);
     localStorage.removeItem(key);
-    console.log(`[CACHE INVALIDATE] ${key}`);
   }
 
   /**
@@ -112,7 +102,6 @@ class CacheManager {
         localStorage.removeItem(key);
       }
     }
-    console.log(`[CACHE INVALIDATE PATTERN] ${pattern}`);
   }
 
   /**
@@ -121,21 +110,22 @@ class CacheManager {
   clearAll(): void {
     this.memoryCache.clear();
     localStorage.clear();
-    console.log('[CACHE CLEAR ALL]');
   }
 
   /**
    * Get TTL for specific data type
    */
-  getTTL(type: 'players' | 'games' | 'stats' | 'topPlayers' | 'default'): number {
+  getTTL(
+    type: "players" | "games" | "stats" | "topPlayers" | "default"
+  ): number {
     switch (type) {
-      case 'players':
+      case "players":
         return this.PLAYERS_TTL;
-      case 'games':
+      case "games":
         return this.GAMES_TTL;
-      case 'stats':
+      case "stats":
         return this.STATS_TTL;
-      case 'topPlayers':
+      case "topPlayers":
         return this.TOP_PLAYERS_TTL;
       default:
         return this.DEFAULT_TTL;
@@ -148,16 +138,17 @@ export const cache = new CacheManager();
 
 // Cache key generators for consistency
 export const CacheKeys = {
-  allPlayers: () => 'players:all',
-  activePlayers: () => 'players:active',
+  allPlayers: () => "players:all",
+  activePlayers: () => "players:active",
   player: (id: string) => `player:${id}`,
 
-  allGames: () => 'games:all',
+  allGames: () => "games:all",
   game: (id: string) => `game:${id}`,
 
   playerStats: (playerId: string) => `stats:player:${playerId}`,
   gameStats: (gameId: string) => `stats:game:${gameId}`,
-  bulkPlayerStats: (playerIds: string[]) => `stats:bulk:${playerIds.sort().join(',')}`,
+  bulkPlayerStats: (playerIds: string[]) =>
+    `stats:bulk:${playerIds.sort().join(",")}`,
   topPlayers: (daysBack: number) => `stats:topPlayers:${daysBack}`,
 
   videos: (gameId: string) => `videos:game:${gameId}`,

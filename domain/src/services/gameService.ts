@@ -144,7 +144,6 @@ export const gameService = {
       throw new Error("Game not found");
     }
 
-    console.log(`🤖 Manually generating AI analysis for game ${id}...`);
 
     try {
       const analysis = await openAIService.generateMatchAnalysis(id);
@@ -152,7 +151,6 @@ export const gameService = {
         aiAnalysis: analysis,
         updatedAt: new Date()
       });
-      console.log(`✅ AI analysis generated and saved for game ${id}`);
 
       const updatedDoc = await gameRef.get();
       const data = updatedDoc.data();
@@ -189,8 +187,6 @@ export const gameService = {
       throw new Error("Game not found");
     }
 
-    console.log(`🗑️ Starting cascade delete for game ${id}...`);
-
     // CASCADE DELETE: Delete all related data
 
     // 1. Delete all player stats for this game
@@ -198,7 +194,6 @@ export const gameService = {
       .where("gameId", "==", id)
       .get();
 
-    console.log(`   Deleting ${playerStatsSnapshot.size} player stats...`);
     const playerStatsDeletePromises = playerStatsSnapshot.docs.map(doc => doc.ref.delete());
     await Promise.all(playerStatsDeletePromises);
 
@@ -207,7 +202,6 @@ export const gameService = {
       .where("gameId", "==", id)
       .get();
 
-    console.log(`   Deleting ${teamStatsSnapshot.size} team stats...`);
     const teamStatsDeletePromises = teamStatsSnapshot.docs.map(doc => doc.ref.delete());
     await Promise.all(teamStatsDeletePromises);
 
@@ -216,7 +210,6 @@ export const gameService = {
       .where("gameId", "==", id)
       .get();
 
-    console.log(`   Deleting ${teamsSnapshot.size} teams...`);
     const teamsDeletePromises = teamsSnapshot.docs.map(doc => doc.ref.delete());
     await Promise.all(teamsDeletePromises);
 
@@ -225,7 +218,6 @@ export const gameService = {
       .where("gameId", "==", id)
       .get();
 
-    console.log(`   Deleting ${videosSnapshot.size} videos...`);
     const videosDeletePromises = videosSnapshot.docs.map(doc => doc.ref.delete());
     await Promise.all(videosDeletePromises);
 
@@ -242,9 +234,7 @@ export const gameService = {
     await cacheService.invalidatePattern('videos:'); // All videos related to this game
     await cacheService.invalidatePattern('teams:'); // All teams related to this game
 
-    console.log(`✅ Game ${id} and all related data deleted successfully`);
-    console.log(`   Summary: ${playerStatsSnapshot.size} player stats, ${teamStatsSnapshot.size} team stats, ${teamsSnapshot.size} teams, ${videosSnapshot.size} videos`);
-  },
+   },
 
   /**
    * Get games by status

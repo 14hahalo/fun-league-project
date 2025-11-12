@@ -15,7 +15,6 @@ async function resetPasswordFlag() {
       .get();
 
     if (playersSnapshot.empty) {
-      console.log(`Player with nickname "${nickname}" not found`);
       return;
     }
 
@@ -27,9 +26,7 @@ async function resetPasswordFlag() {
       updatedAt: new Date(),
     });
 
-    console.log(`✅ Successfully set needsPasswordChange=true for player "${nickname}"`);
   } catch (error) {
-    console.error('Error:', error);
   } finally {
     process.exit(0);
   }
