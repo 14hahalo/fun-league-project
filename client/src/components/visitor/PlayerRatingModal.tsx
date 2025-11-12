@@ -25,7 +25,7 @@ export const PlayerRatingModal = ({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
+  const [_touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
 
   // Check if current user played in this game
   const userPlayedInGame = playersInGame.some(

@@ -80,3 +80,4 @@ coverage/
 # === Miscellaneous ===
 *.bak
 *.orig
+.vercel
