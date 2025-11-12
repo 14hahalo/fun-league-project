@@ -119,7 +119,7 @@ export class PlayerService {
       }
 
       // Hash default password
-      const hashedPassword = await hashPassword(DEFAULT_PLAYER_PASSWORD);
+      const hashedPassword = await hashPassword(DEFAULT_PLAYER_PASSWORD||"aaasssddd");
 
       const newPlayerData = {
         nickname: data.nickname,
