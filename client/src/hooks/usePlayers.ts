@@ -45,10 +45,23 @@ export const usePlayers = (activeOnly = false) => {
     }
   };
 
+  const togglePlayerStatus = async (id: string) => {
+    try {
+      const player = players.find(p => p.id === id);
+      if (!player) return;
+
+      const updatedPlayer = await playerApi.updatePlayer(id, { isActive: !player.isActive });
+      setPlayers(prev => prev.map(p => p.id === id ? updatedPlayer : p));
+    } catch (err) {
+      setError('Oyuncu durumu değiştirilirken bir hata oluştu');
+      throw err;
+    }
+  };
+
   const deletePlayer = async (id: string) => {
     try {
-      await playerApi.deletePlayer(id);
-      setPlayers(prev => prev.map(p => p.id === id ? { ...p, isActive: false } : p));
+      await playerApi.permanentDeletePlayer(id);
+      setPlayers(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       setError('Oyuncu silinirken bir hata oluştu');
       throw err;
@@ -57,6 +70,7 @@ export const usePlayers = (activeOnly = false) => {
 
   useEffect(() => {
     fetchPlayers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOnly]);
 
   return {
@@ -66,6 +80,7 @@ export const usePlayers = (activeOnly = false) => {
     fetchPlayers,
     createPlayer,
     updatePlayer,
+    togglePlayerStatus,
     deletePlayer,
   };
 };

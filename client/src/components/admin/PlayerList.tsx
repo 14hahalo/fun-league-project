@@ -3,10 +3,13 @@ import { Button } from '../shared/Button';
 
 interface PlayerListProps {
   players: Player[];
+  onEdit: (player: Player) => void;
   onDelete: (id: string) => Promise<void>;
+  onToggleStatus: (id: string) => Promise<void>;
+  onSetPassword: (player: Player) => void;
 }
 
-export const PlayerList = ({ players, onDelete }: PlayerListProps) => {
+export const PlayerList = ({ players, onEdit, onDelete, onToggleStatus, onSetPassword }: PlayerListProps) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="px-6 py-4 bg-orange-600 text-white">
@@ -79,13 +82,36 @@ export const PlayerList = ({ players, onDelete }: PlayerListProps) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <Button
-                      variant="danger"
-                      onClick={() => onDelete(player.id)}
-                      className="text-xs"
-                    >
-                      Sil
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        variant="secondary"
+                        onClick={() => onEdit(player)}
+                        className="text-xs"
+                      >
+                        Düzenle
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={() => onSetPassword(player)}
+                        className="text-xs bg-blue-500 hover:bg-blue-600"
+                      >
+                        Şifre Belirle
+                      </Button>
+                      <Button
+                        variant={player.isActive ? 'secondary' : 'primary'}
+                        onClick={() => onToggleStatus(player.id)}
+                        className="text-xs"
+                      >
+                        {player.isActive ? 'Pasife Al' : 'Aktif Et'}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => onDelete(player.id)}
+                        className="text-xs"
+                      >
+                        Sil
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))

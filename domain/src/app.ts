@@ -1,33 +1,38 @@
-import express, { Application } from 'express';
-import cors from 'cors';
-import routes from './routes';
-import { errorHandler } from './middleware/errorHandler';
+import express, { Application } from "express";
+import cors from "cors";
+import routes from "./routes";
+import { errorHandler } from "./middleware/errorHandler";
+import compression from "compression";
 
 const app: Application = express();
 
-// CORS - React frontend'den gelen isteklere izin ver
-app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://192.168.0.82:5173"],
+    credentials: true,
+  })
+);
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  compression({
+    level: 6, 
+    threshold: 1024, 
+  })
+);
 
-// API Routes
-app.use('/api', routes);
+app.use(express.json({ limit: "10mb" })); 
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
+app.use("/api", routes);
+
+app.get("/health", (_req, res) => {
   res.status(200).json({
-    status: 'success',
-    message: 'Server is running!',
+    status: "success",
+    message: "Server is running!",
     timestamp: new Date().toISOString(),
   });
 });
 
-// Error handling middleware (en sonda olmalı)
 app.use(errorHandler);
 
 export default app;

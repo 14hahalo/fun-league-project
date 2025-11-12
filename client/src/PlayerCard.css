@@ -1,0 +1,235 @@
+/* FIFA Player Card Styles - Scoped */
+.fifa-card-container {
+  position: relative;
+  min-height: auto;
+  width: 270px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Roboto Condensed", sans-serif;
+  margin: 0 auto;
+}
+
+/* CARD BASE */
+.fifa-card-container .fifa-card {
+  position: relative;
+  color: #272520;
+  width: 270px;
+  height: 430px;
+  background: #42101000;
+  margin: auto;
+  display: block;
+  opacity: 1;
+  transition: 0.3s all cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.fifa-card-container .fifa-card.active {
+  display: block;
+  cursor: pointer;
+  transform: rotate(0deg);
+  opacity: 1;
+}
+
+/* Card Inner Content */
+.fifa-card-container .fifa-card-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #aaaaaa00;
+  height: 100%;
+  width: 100%;
+}
+
+.fifa-card-container .fifa-card-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 54%;
+  background: linear-gradient(135deg, #fdeaa7 0%, #d6b74a 100%);
+  overflow: hidden;
+}
+
+.fifa-card-container .fifa-card-top .fifa-player-image {
+  position: absolute;
+  left: 40%;
+  bottom: 5%;
+  height: 75%;
+  width: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0;
+  transition: 0.5s all ease-out 0.3s;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 10px rgba(168, 92, 92, 0.034) inset,
+    0 0 30px 10px rgba(0,0,0,0.5) inset;
+}
+
+.fifa-card-container .fifa-card-top .fifa-backfont {
+  position: absolute;
+  bottom: -22px;
+  line-height: 1;
+  font-size: 118px;
+  left: 0;
+  letter-spacing: -5px;
+  opacity: 0;
+  font-weight: 700;
+  font-style: italic;
+  transition: 1s all cubic-bezier(0.075, 0.82, 0.165, 1) 0.4s;
+}
+
+.fifa-card-container .fifa-card-top .fifa-player-info {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 75%;
+  width: 30%;
+  box-sizing: border-box;
+  padding: 0 20px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Active Animations */
+.fifa-card-container .fifa-card.active .fifa-player-image {
+  right: 0;
+  opacity: 1;
+}
+
+.fifa-card-container .fifa-card.active .fifa-backfont {
+  opacity: 0.1;
+  left: -8px;
+}
+
+.fifa-card-container .fifa-card-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 46%;
+  background: linear-gradient(135deg, #ffc800 0%, #d6b74a 100%);
+}
+
+.fifa-card-container .fifa-card-bottom .fifa-player-name {
+  text-align: center;
+  font-size: 28px;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0;
+  top: -5px;
+  position: relative;
+  transition: 0.5s all ease-out 0.5s;
+  margin: 6px 0;
+}
+
+.fifa-card-container .fifa-card.active .fifa-player-name {
+  opacity: 1;
+  top: 0;
+}
+
+/* Info Section Styles */
+.fifa-card-container .fifa-player-info .fifa-rating-value {
+  font-size: 58px;
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0;
+  transition: 0.5s all ease-out 0.2s;
+  position: relative;
+  top: -10px;
+}
+
+.fifa-card-container .fifa-card.active .fifa-rating-value {
+  opacity: 1;
+  top: 0;
+}
+
+.fifa-card-container .fifa-player-info .fifa-position {
+  font-size: 38px;
+  font-weight: 600;
+  opacity: 0;
+  transition: 0.5s all ease-out 0.4s;
+  position: relative;
+  
+}
+
+.fifa-card-container .fifa-card.active .fifa-position {
+  opacity: 1;
+  top: 0;
+}
+
+.fifa-card-container .fifa-player-info .fifa-country,
+.fifa-card-container .fifa-player-info .fifa-club {
+  width: 50px;
+  height: 50px;
+  margin: 5px auto 0;
+  opacity: 0;
+  transition: 0.5s all ease-out 0.6s;
+  position: relative;
+  top: -10px;
+}
+
+.fifa-card-container .fifa-card.active .fifa-country,
+.fifa-card-container .fifa-card.active .fifa-club {
+  opacity: 1;
+  top: 0;
+}
+
+.fifa-card-container .fifa-player-info .fifa-country div,
+.fifa-card-container .fifa-player-info .fifa-club div {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Stats Section */
+.fifa-card-container .fifa-card-bottom .fifa-stats {
+  display: flex;
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: 0.5s all ease-out 0.7s;
+  position: relative;
+  top: -5px;
+}
+
+.fifa-card-container .fifa-card.active .fifa-stats {
+  opacity: 1;
+  top: 0;
+}
+
+.fifa-card-container .fifa-stats > div {
+  flex: 1;
+}
+
+.fifa-card-container .fifa-stats ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fifa-card-container .fifa-stats li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 0;
+}
+
+.fifa-card-container .fifa-stats li span:first-child {
+  text-align: right;
+  flex: 1;
+  padding-right: 8px;
+}
+
+.fifa-card-container .fifa-stats li span:last-child {
+  text-align: left;
+  flex: 1;
+  padding-left: 8px;
+}

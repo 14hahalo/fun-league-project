@@ -1,28 +1,23 @@
-# Dependencies
+# === Dependencies ===
 node_modules/
-*/node_modules/
-domain/node_modules/
-client/node_modules/
 
-# Build outputs
+# === Build outputs ===
 dist/
 build/
 */dist/
 */build/
-domain/dist/
-client/dist/
 
-# Environment variables
+# === Environment variables ===
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 *.env
+serviceAccountKey.json
+*serviceAccountKey*.json
 domain/.env
 client/.env
 
-# Logs
+# === Logs ===
 logs/
 *.log
 npm-debug.log*
@@ -31,27 +26,23 @@ yarn-error.log*
 lerna-debug.log*
 pnpm-debug.log*
 
-# Local data
-data/
-domain/data/
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!tailwind.config.js
-!postcss.config.js
+# === Local data ===
+**/*.json
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/tailwind.config.js
+!/postcss.config.js
 
-# OS files
+# === OS files ===
 .DS_Store
-.DS_Store?
-._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 Desktop.ini
 
-# IDE
+# === IDE ===
 .vscode/
 .idea/
 *.swp
@@ -63,31 +54,29 @@ Desktop.ini
 *.sublime-project
 *.sublime-workspace
 
-# Testing
+# === Testing ===
 coverage/
 .nyc_output/
 *.lcov
 
-# Temporary files
+# === Temporary files ===
 *.tmp
 *.temp
 .cache/
 .parcel-cache/
 
-# Package manager
+# === Package manager ===
 .pnpm-store/
 .yarn/
 .npm/
 
-# TypeScript
+# === TypeScript ===
 *.tsbuildinfo
 
-# Optional eslint cache
+# === Optional caches ===
 .eslintcache
-
-# Optional stylelint cache
 .stylelintcache
 
-# Miscellaneous
+# === Miscellaneous ===
 *.bak
 *.orig
