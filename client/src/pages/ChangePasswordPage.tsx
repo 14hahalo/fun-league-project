@@ -11,7 +11,7 @@ export const ChangePasswordPage = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { changePassword, _user, isAuthenticated } = useAuth();
+  const { changePassword, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
