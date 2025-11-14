@@ -40,9 +40,6 @@ export interface MonthlyLeaders {
 const getLastMonthDays = (): number => {
   const now = new Date();
 
-  // Get the first day of the current month
-  const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
   // Get the first day of last month
   const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
