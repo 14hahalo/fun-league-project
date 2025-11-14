@@ -59,6 +59,8 @@ export const openAIService = {
             id: playerIds[index],
             name: displayName,
             position: playerData?.position || 'Unknown',
+            height: playerData?.height || 0,
+            badges: playerData?.badges || [],
             gamesPlayed: 0,
             avgPoints: 0,
             avgRebounds: 0,
@@ -80,6 +82,8 @@ export const openAIService = {
           id: playerIds[index],
           name: displayName,
           position: playerData?.position || 'Unknown',
+          height: playerData?.height || 0,
+          badges: playerData?.badges || [],
           gamesPlayed,
           avgPoints: totalPoints / gamesPlayed,
           avgRebounds: totalRebounds / gamesPlayed,
@@ -90,11 +94,13 @@ export const openAIService = {
       });
 
       // Build prompt
-      const prompt = `10 oyuncuyu 2 dengeli basketbol takımına ayır. Her takımda 5 oyuncu olmalı. Takımlar mümkün olduğunca dengeli olmalı (toplam yetenek, pozisyonlar, vb.).
+      const prompt = `10 oyuncuyu 2 dengeli basketbol takımına ayır. Her takımda 5 oyuncu olmalı. Takımlar mümkün olduğunca dengeli olmalı (toplam yetenek, pozisyonlar, boy, rozetler vb.).
 
 **Oyuncu İstatistikleri:**
 ${playerProfiles.map(p => `
 - ${p.name} (${p.position})
+  * Boy: ${p.height} cm
+  * Rozetler: ${p.badges.length > 0 ? p.badges.join(', ') : 'Yok'}
   * ${p.gamesPlayed} maç oynadı
   * Ortalama: ${p.avgPoints.toFixed(1)} sayı, ${p.avgRebounds.toFixed(1)} ribaund, ${p.avgAssists.toFixed(1)} asist
   * 2P: %${p.twoPointPercentage.toFixed(1)}, 3P: %${p.threePointPercentage.toFixed(1)}
@@ -125,7 +131,7 @@ Lütfen şu formatta cevap ver:
         messages: [
           {
             role: 'system',
-            content: 'Sen basketbol takım kurma uzmanısın. Oyuncu istatistiklerine göre dengeli takımlar oluşturursun. Türkçe yazarsın.',
+            content: 'Sen basketbol takım kurma uzmanısın. Oyuncu istatistiklerine, boylarına, pozisyonlarına ve rozetlerine göre dengeli takımlar oluşturursun. Boy farkını, pozisyon dengesini ve oyuncu rozetlerini (yeteneklerini) dikkate alarak takımları dengelersin. Türkçe yazarsın.',
           },
           {
             role: 'user',

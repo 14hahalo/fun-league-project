@@ -44,8 +44,12 @@ export const playerStatsApi = {
   },
 
   // Get top players
-  async getTopPlayers(daysBack: number = 30): Promise<any> {
-    const response = await apiClient.get<{ success: boolean; data: any }>(`/player-stats/top-players?daysBack=${daysBack}`);
+  async getTopPlayers(daysBack: number = 30, endDate?: Date): Promise<any> {
+    let url = `/player-stats/top-players?daysBack=${daysBack}`;
+    if (endDate) {
+      url += `&endDate=${endDate.toISOString()}`;
+    }
+    const response = await apiClient.get<{ success: boolean; data: any }>(url);
     return response.data.data;
   },
 };

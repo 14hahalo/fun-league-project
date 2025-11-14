@@ -320,11 +320,129 @@ export class PlayerStatsService {
     }
   }
 
+  // Helper method to calculate top players from a list of game IDs
+  private static async calculateTopPlayersFromGames(gameIds: string[], cacheKey: string) {
+    if (gameIds.length === 0) {
+      return {
+        topScorer: null,
+        bestShooter: null,
+        mostRebounds: null,
+        mostAssists: null,
+      };
+    }
+
+    // Get all player stats for these games
+    // Note: Firestore has a limit of 10 items in 'in' queries, so we need to batch
+    const allStats: PlayerStats[] = [];
+    const batchSize = 10;
+
+    for (let i = 0; i < gameIds.length; i += batchSize) {
+      const batchGameIds = gameIds.slice(i, i + batchSize);
+      const snapshot = await this.collection
+        .where("gameId", "in", batchGameIds)
+        .get();
+
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        allStats.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        } as PlayerStats);
+      });
+    }
+
+    // Aggregate stats by player
+    const playerAggregates = new Map<string, {
+      playerId: string;
+      totalPoints: number;
+      totalRebounds: number;
+      totalAssists: number;
+      twoPointMade: number;
+      twoPointAttempts: number;
+      threePointMade: number;
+      threePointAttempts: number;
+      gamesPlayed: number;
+    }>();
+
+    allStats.forEach(stat => {
+      const current = playerAggregates.get(stat.playerId) || {
+        playerId: stat.playerId,
+        totalPoints: 0,
+        totalRebounds: 0,
+        totalAssists: 0,
+        twoPointMade: 0,
+        twoPointAttempts: 0,
+        threePointMade: 0,
+        threePointAttempts: 0,
+        gamesPlayed: 0,
+      };
+
+      playerAggregates.set(stat.playerId, {
+        playerId: stat.playerId,
+        totalPoints: current.totalPoints + stat.totalPoints,
+        totalRebounds: current.totalRebounds + stat.totalRebounds,
+        totalAssists: current.totalAssists + stat.assists,
+        twoPointMade: current.twoPointMade + stat.twoPointMade,
+        twoPointAttempts: current.twoPointAttempts + stat.twoPointAttempts,
+        threePointMade: current.threePointMade + stat.threePointMade,
+        threePointAttempts: current.threePointAttempts + stat.threePointAttempts,
+        gamesPlayed: current.gamesPlayed + 1,
+      });
+    });
+
+    // Find top performers
+    const aggregatesArray = Array.from(playerAggregates.values());
+
+    // Top scorer - most total points
+    const topScorer = aggregatesArray.reduce((prev, current) =>
+      current.totalPoints > prev.totalPoints ? current : prev
+    , aggregatesArray[0]);
+
+    // Best shooter - highest overall shooting percentage (minimum 10 attempts)
+    const eligibleShooters = aggregatesArray.filter(p =>
+      (p.twoPointAttempts + p.threePointAttempts) >= 10
+    );
+    const bestShooter = eligibleShooters.length > 0
+      ? eligibleShooters.reduce((prev, current) => {
+          const prevPct = (prev.twoPointMade + prev.threePointMade) / (prev.twoPointAttempts + prev.threePointAttempts);
+          const currentPct = (current.twoPointMade + current.threePointMade) / (current.twoPointAttempts + current.threePointAttempts);
+          return currentPct > prevPct ? current : prev;
+        })
+      : null;
+
+    // Most rebounds
+    const mostRebounds = aggregatesArray.reduce((prev, current) =>
+      current.totalRebounds > prev.totalRebounds ? current : prev
+    , aggregatesArray[0]);
+
+    // Most assists
+    const mostAssists = aggregatesArray.reduce((prev, current) =>
+      current.totalAssists > prev.totalAssists ? current : prev
+    , aggregatesArray[0]);
+
+    const topPlayersData = {
+      topScorer,
+      bestShooter,
+      mostRebounds,
+      mostAssists,
+      allPlayerAggregates: aggregatesArray, // Include all player aggregates for efficiency ranking
+    };
+
+    // Cache the result (shorter TTL for top players as it changes more frequently)
+    await cacheService.set(cacheKey, topPlayersData, cacheService.getTTL('TOP_PLAYERS'));
+
+    return topPlayersData;
+  }
+
   // Get top players by various stats
-  static async getTopPlayers(daysBack: number = 30) {
+  static async getTopPlayers(daysBack: number = 30, endDate?: Date) {
     try {
       // Check cache first
-      const cacheKey = CacheKeys.topPlayers(daysBack);
+      const cacheKey = endDate
+        ? `${CacheKeys.topPlayers(daysBack)}:${endDate.toISOString()}`
+        : CacheKeys.topPlayers(daysBack);
       const cached = await cacheService.get(cacheKey);
       if (cached) return cached;
 
@@ -334,123 +452,24 @@ export class PlayerStatsService {
 
       // Get all player stats from recent games
       const gamesCollection = db.collection("games");
-      const recentGames = await gamesCollection
-        .where("date", ">=", dateThreshold)
-        .get();
+      let query = gamesCollection.where("date", ">=", dateThreshold);
 
+      // If endDate is provided, filter games up to that date
+      if (endDate) {
+        const recentGames = await query.get();
+        const filteredGames = recentGames.docs.filter(doc => {
+          const gameDate = doc.data().date.toDate();
+          return gameDate <= endDate;
+        });
+        const gameIds = filteredGames.map(doc => doc.id);
+
+        return await this.calculateTopPlayersFromGames(gameIds, cacheKey);
+      }
+
+      const recentGames = await query.get();
       const gameIds = recentGames.docs.map(doc => doc.id);
 
-      if (gameIds.length === 0) {
-        return {
-          topScorer: null,
-          bestShooter: null,
-          mostRebounds: null,
-          mostAssists: null,
-        };
-      }
-
-      // Get all player stats for these games
-      // Note: Firestore has a limit of 10 items in 'in' queries, so we need to batch
-      const allStats: PlayerStats[] = [];
-      const batchSize = 10;
-
-      for (let i = 0; i < gameIds.length; i += batchSize) {
-        const batchGameIds = gameIds.slice(i, i + batchSize);
-        const snapshot = await this.collection
-          .where("gameId", "in", batchGameIds)
-          .get();
-
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data();
-          allStats.push({
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
-          } as PlayerStats);
-        });
-      }
-
-      // Aggregate stats by player
-      const playerAggregates = new Map<string, {
-        playerId: string;
-        totalPoints: number;
-        totalRebounds: number;
-        totalAssists: number;
-        twoPointMade: number;
-        twoPointAttempts: number;
-        threePointMade: number;
-        threePointAttempts: number;
-        gamesPlayed: number;
-      }>();
-
-      allStats.forEach(stat => {
-        const current = playerAggregates.get(stat.playerId) || {
-          playerId: stat.playerId,
-          totalPoints: 0,
-          totalRebounds: 0,
-          totalAssists: 0,
-          twoPointMade: 0,
-          twoPointAttempts: 0,
-          threePointMade: 0,
-          threePointAttempts: 0,
-          gamesPlayed: 0,
-        };
-
-        playerAggregates.set(stat.playerId, {
-          playerId: stat.playerId,
-          totalPoints: current.totalPoints + stat.totalPoints,
-          totalRebounds: current.totalRebounds + stat.totalRebounds,
-          totalAssists: current.totalAssists + stat.assists,
-          twoPointMade: current.twoPointMade + stat.twoPointMade,
-          twoPointAttempts: current.twoPointAttempts + stat.twoPointAttempts,
-          threePointMade: current.threePointMade + stat.threePointMade,
-          threePointAttempts: current.threePointAttempts + stat.threePointAttempts,
-          gamesPlayed: current.gamesPlayed + 1,
-        });
-      });
-
-      // Find top performers
-      const aggregatesArray = Array.from(playerAggregates.values());
-
-      // Top scorer - most total points
-      const topScorer = aggregatesArray.reduce((prev, current) =>
-        current.totalPoints > prev.totalPoints ? current : prev
-      , aggregatesArray[0]);
-
-      // Best shooter - highest overall shooting percentage (minimum 10 attempts)
-      const eligibleShooters = aggregatesArray.filter(p =>
-        (p.twoPointAttempts + p.threePointAttempts) >= 10
-      );
-      const bestShooter = eligibleShooters.length > 0
-        ? eligibleShooters.reduce((prev, current) => {
-            const prevPct = (prev.twoPointMade + prev.threePointMade) / (prev.twoPointAttempts + prev.threePointAttempts);
-            const currentPct = (current.twoPointMade + current.threePointMade) / (current.twoPointAttempts + current.threePointAttempts);
-            return currentPct > prevPct ? current : prev;
-          })
-        : null;
-
-      // Most rebounds
-      const mostRebounds = aggregatesArray.reduce((prev, current) =>
-        current.totalRebounds > prev.totalRebounds ? current : prev
-      , aggregatesArray[0]);
-
-      // Most assists
-      const mostAssists = aggregatesArray.reduce((prev, current) =>
-        current.totalAssists > prev.totalAssists ? current : prev
-      , aggregatesArray[0]);
-
-      const topPlayersData = {
-        topScorer,
-        bestShooter,
-        mostRebounds,
-        mostAssists,
-      };
-
-      // Cache the result (shorter TTL for top players as it changes more frequently)
-      await cacheService.set(cacheKey, topPlayersData, cacheService.getTTL('TOP_PLAYERS'));
-
-      return topPlayersData;
+      return await this.calculateTopPlayersFromGames(gameIds, cacheKey);
     } catch (error) {
       throw new AppError("Top oyuncular getirilirken hata oluştu", 500);
     }

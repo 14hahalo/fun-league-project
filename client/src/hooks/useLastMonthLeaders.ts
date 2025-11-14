@@ -36,17 +36,20 @@ export interface MonthlyLeaders {
   dominant3PP: StatLeader | null;
 }
 
-// Calculate days in previous month
+// Calculate days from today back to the start of last month
 const getLastMonthDays = (): number => {
   const now = new Date();
+
+  // Get the first day of the current month
   const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayLastMonth = new Date(firstDayThisMonth.getTime() - 1);
-  const firstDayLastMonth = new Date(lastDayLastMonth.getFullYear(), lastDayLastMonth.getMonth(), 1);
 
-  const daysBetween = Math.ceil((lastDayLastMonth.getTime() - firstDayLastMonth.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const daysFromLastMonthEnd = Math.ceil((now.getTime() - lastDayLastMonth.getTime()) / (1000 * 60 * 60 * 24));
+  // Get the first day of last month
+  const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  return daysBetween + daysFromLastMonthEnd;
+  // Calculate days from today back to the first day of last month
+  const daysBack = Math.ceil((now.getTime() - firstDayLastMonth.getTime()) / (1000 * 60 * 60 * 24));
+
+  return daysBack;
 };
 
 export const useLastMonthLeaders = () => {
@@ -70,16 +73,22 @@ export const useLastMonthLeaders = () => {
         setLoading(true);
         setError(null);
 
-        // Get last month's name
+        // Get last month's name and date range
         const now = new Date();
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
                            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
         setMonthName(monthNames[lastMonth.getMonth()]);
 
-        // Fetch stats for last month
+        // Calculate the last day of last month (which is the day before the first day of this month)
+        const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDayLastMonth = new Date(firstDayThisMonth.getTime() - 1);
+        // Set time to end of day
+        lastDayLastMonth.setHours(23, 59, 59, 999);
+
+        // Fetch stats for last month only
         const daysBack = getLastMonthDays();
-        const data = await playerStatsApi.getTopPlayers(daysBack);
+        const data = await playerStatsApi.getTopPlayers(daysBack, lastDayLastMonth);
 
         // Fetch all players to get their details
         const players = await playerApi.getAllPlayers();
@@ -154,30 +163,23 @@ export const useLastMonthLeaders = () => {
           mostAssists: enrichPlayerData(data.mostAssists),
         };
 
-        // Calculate top 3 efficient players from all stat leaders
-        const allPlayers = [
-          enrichedData.topScorer,
-          enrichedData.bestShooter,
-          enrichedData.mostRebounds,
-          enrichedData.mostAssists,
-        ].filter(Boolean) as StatLeader[];
+        // Calculate top 3 efficient players from ALL players who played in October
+        // Use allPlayerAggregates from backend which contains ALL players, not just category leaders
+        const allPlayersEnriched = (data.allPlayerAggregates || [])
+          .map((aggregate: any) => enrichPlayerData(aggregate))
+          .filter(Boolean) as StatLeader[];
 
-        // Remove duplicates by playerId
-        const uniquePlayers = Array.from(
-          new Map(allPlayers.map(p => [p.playerId, p])).values()
-        );
-
-        // Sort by efficiency
-        const sortedByEfficiency = [...uniquePlayers].sort((a, b) =>
+        // Sort ALL players by efficiency
+        const sortedByEfficiency = [...allPlayersEnriched].sort((a, b) =>
           (b.efficiency || 0) - (a.efficiency || 0)
         );
 
-        // Find dominant 2P and 3P shooters
-        const sortedBy2P = [...uniquePlayers]
+        // Find dominant 2P and 3P shooters from all players
+        const sortedBy2P = [...allPlayersEnriched]
           .filter(p => (p.twoPointAttempts || 0) >= 5)
           .sort((a, b) => (b.twoPointPercentage || 0) - (a.twoPointPercentage || 0));
 
-        const sortedBy3P = [...uniquePlayers]
+        const sortedBy3P = [...allPlayersEnriched]
           .filter(p => (p.threePointAttempts || 0) >= 5)
           .sort((a, b) => (b.threePointPercentage || 0) - (a.threePointPercentage || 0));
 

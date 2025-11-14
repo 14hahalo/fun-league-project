@@ -212,7 +212,8 @@ export class PlayerStatsController {
   ): Promise<void> {
     try {
       const daysBack = req.query.daysBack ? parseInt(req.query.daysBack as string) : 30;
-      const topPlayers = await PlayerStatsService.getTopPlayers(daysBack);
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const topPlayers = await PlayerStatsService.getTopPlayers(daysBack, endDate);
 
       res.status(200).json({
         success: true,
