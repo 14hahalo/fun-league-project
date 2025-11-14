@@ -14,6 +14,10 @@ const migrateExistingPlayers = async () => {
       process.exit(0);
     }
 
+    if (!DEFAULT_PLAYER_PASSWORD) {
+      throw new Error('DEFAULT_PLAYER_PASSWORD is not defined');
+    }
+
     // Hash default password once
     const hashedPassword = await hashPassword(DEFAULT_PLAYER_PASSWORD);
 

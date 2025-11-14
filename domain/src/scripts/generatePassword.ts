@@ -11,7 +11,7 @@ const generateHashedPassword = async () => {
   }
 
   try {
-    const hashedPassword = await hashPassword(password);
+    await hashPassword(password);
     process.exit(0);
   } catch (error) {
     process.exit(1);

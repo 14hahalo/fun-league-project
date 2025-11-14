@@ -42,7 +42,7 @@ const seedAdminUser = async () => {
     const hashedPassword = await hashPassword(ADMIN_DATA.password!);
 
     // Create admin user
-    const adminRef = await playersCollection.add({
+    await playersCollection.add({
       nickname: ADMIN_DATA.nickname,
       email: ADMIN_DATA.email,
       password: hashedPassword,
