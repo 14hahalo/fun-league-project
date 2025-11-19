@@ -141,7 +141,7 @@ class CacheService {
   /**
    * Get TTL for specific data type
    */
-  getTTL(type: keyof typeof this.TTL): number {
+  getTTL(type: 'PLAYERS' | 'GAMES' | 'STATS' | 'TOP_PLAYERS' | 'VIDEOS' | 'TEAMS'): number {
     return this.TTL[type];
   }
 
