@@ -1,9 +1,12 @@
 import { useLastMonthLeaders } from '../hooks/useLastMonthLeaders';
+import { useTopPlays } from '../hooks/useTopPlays';
 import { FIFAPlayerCard } from '../components/visitor/FIFAPlayerCard';
+import { TopPlaysCarousel } from '../components/visitor/TopPlaysCarousel';
 import { Loading } from '../components/shared/Loading';
 
 export const VisitorPage = () => {
   const { leaders, loading, error, monthName } = useLastMonthLeaders();
+  const { topPlays, loading: topPlaysLoading } = useTopPlays();
 
   if (loading) return <Loading />;
 
@@ -162,6 +165,18 @@ export const VisitorPage = () => {
             )}
           </div>
         </div>
+
+        {/* Top Plays Carousel */}
+        {!topPlaysLoading && topPlays.length > 0 && (
+          <div className="my-20">
+            <h2 className="text-center text-2xl md:text-4xl font-black text-white mb-8 md:mb-12 uppercase tracking-wide">
+              🎬 {monthName} AYININ EN İYİ OYUNLARI 🎬
+            </h2>
+            <div className="max-w-6xl mx-auto px-4">
+              <TopPlaysCarousel videos={topPlays} />
+            </div>
+          </div>
+        )}
 
         {/* Other Stat Leaders */}
         <div className="mt-16 px-4">

@@ -81,3 +81,4 @@ coverage/
 *.bak
 *.orig
 .vercel
+firestore.rules

@@ -45,6 +45,7 @@ export const YouTubePlayer = ({
     try {
       const patterns = [
         /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
+        /(?:youtube\.com\/shorts\/)([^&\n?#]+)/, // YouTube Shorts support
         /^([a-zA-Z0-9_-]{11})$/,
       ];
 
