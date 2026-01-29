@@ -1,10 +1,17 @@
 import admin from 'firebase-admin';
 import * as path from 'path';
 
-const serviceAccountPath = path.join(__dirname, '../../../serviceAccountKey.json');
+let serviceAccount: admin.ServiceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else {
+  const serviceAccountPath = path.join(__dirname, '../../../serviceAccountKey.json');
+  serviceAccount = require(serviceAccountPath);
+}
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccountPath)
+  credential: admin.credential.cert(serviceAccount)
 });
 
 const db = admin.firestore();
