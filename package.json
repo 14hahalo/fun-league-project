@@ -7,6 +7,7 @@
     "dev:backend": "cd domain && npm run dev",
     "dev:frontend": "cd client && npm run dev",
     "install:all": "npm install && cd domain && npm install && cd ../client && npm install",
+    "vercel-install": "cd domain && npm install && cd ../client && npm install",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd domain && npm run build",
     "build:frontend": "cd client && npm run build",
