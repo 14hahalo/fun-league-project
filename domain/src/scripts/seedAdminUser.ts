@@ -5,21 +5,14 @@ import { db } from '../config/firebase';
 import { PlayerRole } from '../models/Player';
 import { hashPassword } from '../utils/password';
 
-/**
- * Script to create an initial admin user
- * Usage: npx ts-node src/scripts/seedAdminUser.ts
- *
- * You can customize the admin details below
- */
-
 const ADMIN_DATA = {
   nickname: 'admin',
   email: 'admin@funleague.com',
-  password: process.env.ADMINPASS, // Change this to your desired admin password
+  password: process.env.ADMINPASS, 
   firstName: 'Admin',
   lastName: 'User',
   role: PlayerRole.ADMIN,
-  needsPasswordChange: false, // Set to true if you want admin to change password on first login
+  needsPasswordChange: false, 
   isActive: true,
 };
 
@@ -28,7 +21,6 @@ const seedAdminUser = async () => {
 
     const playersCollection = db.collection('players');
 
-    // Check if admin already exists
     const adminQuery = await playersCollection
       .where('nickname', '==', ADMIN_DATA.nickname)
       .limit(1)
@@ -38,10 +30,9 @@ const seedAdminUser = async () => {
       process.exit(0);
     }
 
-    // Hash the admin password
+    // Admin de olsa o parola şifrelenecek
     const hashedPassword = await hashPassword(ADMIN_DATA.password!);
 
-    // Create admin user
     await playersCollection.add({
       nickname: ADMIN_DATA.nickname,
       email: ADMIN_DATA.email,

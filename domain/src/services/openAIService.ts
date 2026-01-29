@@ -1,338 +1,403 @@
 import OpenAI from 'openai';
 import { db } from '../config/firebase';
 
+interface PlayerProfile {
+  id: string;
+  name: string;
+  position: string;
+  height: number;
+  badges: string[];
+  gamesPlayed: number;
+  avgPoints: number;
+  avgRebounds: number;
+  avgAssists: number;
+  twoPointPct: number;
+  threePointPct: number;
+}
+
+interface TeamBuildResponse {
+  teamA: string[];
+  teamB: string[];
+  analysis: string;
+}
+
+interface OpenAITeamBuildResult {
+  teamA: string[];
+  teamB: string[];
+  analysis: string;
+}
+
+export class OpenAIQuotaError extends Error {
+  constructor(message = 'OpenAI API kotası bitmiş.') {
+    super(message);
+    this.name = 'OpenAIQuotaError';
+  }
+}
+
+export class OpenAIRateLimitError extends Error {
+  constructor(message = 'OpenAI API kullanım sınırına ulaşıldı, sonra tekrar deneyebilirsin.') {
+    super(message);
+    this.name = 'OpenAIRateLimitError';
+  }
+}
+
+export class OpenAIServiceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OpenAIServiceError';
+  }
+}
+
+export class TeamBuildError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TeamBuildError';
+  }
+}
+
 const apiKey = process.env.OPENAI_API_KEY;
 
+if (!apiKey) {
+  console.warn('OPENAI_API_KEY bulunamadı.');
+}
 
 const openai = new OpenAI({
-  apiKey: apiKey,
+  apiKey: apiKey || '',
 });
 
+function handleOpenAIError(error: unknown): never {
+  if (error instanceof OpenAI.APIError) {
+    const statusCode = error.status;
+    const errorCode = (error as { code?: string }).code;
+
+    if (statusCode === 429 && errorCode === 'insufficient_quota') {
+      throw new OpenAIQuotaError();
+    }
+
+    if (statusCode === 429) {
+      throw new OpenAIRateLimitError();
+    }
+
+    if (statusCode === 401) {
+      throw new OpenAIServiceError('Geçersiz OpenAI API key');
+    }
+
+    if (statusCode && statusCode >= 500) {
+      throw new OpenAIServiceError('OpenAI servisine ulaşılamıyor');
+    }
+
+    throw new OpenAIServiceError(`OpenAI API hatası: ${error.message}`);
+  }
+
+  if (error instanceof Error) {
+    throw new OpenAIServiceError(error.message);
+  }
+
+  throw new OpenAIServiceError('Bilinmeyen OpenAI servis hatası');
+}
+
+function safeParseJSON<T>(content: string | null): T | null {
+  if (!content) return null;
+
+  try {
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      return JSON.parse(codeBlockMatch[1].trim()) as T;
+    }
+
+    return JSON.parse(content.trim()) as T;
+  } catch {
+    return null;
+  }
+}
+
+function validateTeamBuildResult(
+  result: unknown,
+  validPlayerIds: string[]
+): result is OpenAITeamBuildResult {
+  if (!result || typeof result !== 'object') return false;
+
+  const obj = result as Record<string, unknown>;
+
+  if (!Array.isArray(obj.teamA) || !Array.isArray(obj.teamB)) return false;
+  if (typeof obj.analysis !== 'string') return false;
+  if (obj.teamA.length !== 5 || obj.teamB.length !== 5) return false;
+
+  const allIds = [...obj.teamA, ...obj.teamB] as string[];
+  const validSet = new Set(validPlayerIds);
+
+  for (const id of allIds) {
+    if (typeof id !== 'string' || !validSet.has(id)) return false;
+  }
+
+  const uniqueIds = new Set(allIds);
+  if (uniqueIds.size !== 10) return false;
+
+  return true;
+}
+
+function buildPlayerDataString(players: PlayerProfile[]): string {
+  return players
+    .map(
+      (p) =>
+        `${p.id}|${p.name}|${p.position}|${p.height}cm|${p.gamesPlayed}g|${p.avgPoints.toFixed(1)}p|${p.avgRebounds.toFixed(1)}r|${p.avgAssists.toFixed(1)}a|2P:${p.twoPointPct.toFixed(0)}%|3P:${p.threePointPct.toFixed(0)}%|${p.badges.length > 0 ? p.badges.join(',') : '-'}`
+    )
+    .join('\n');
+}
+
 export const openAIService = {
-  /**
-   * Build balanced basketball teams based on player performance
-   */
-  async buildBalancedTeams(playerIds: string[]): Promise<{
-    teamA: string[];
-    teamB: string[];
-    analysis: string;
-    cost: number;
-    tokenUsage: {
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
-    };
-  }> {
+  async buildBalancedTeams(playerIds: string[]): Promise<TeamBuildResponse> {
+    if (playerIds.length !== 10) {
+      throw new TeamBuildError('10 oyuncu seçilmesi gerekmektedir');
+    }
+
+    if (!apiKey) {
+      throw new OpenAIServiceError('OpenAI API key bulunamadı');
+    }
+
     try {
+      const [playerDocs, playerStatsSnapshots] = await Promise.all([
+        Promise.all(playerIds.map((id) => db.collection('players').doc(id).get())),
+        Promise.all(playerIds.map((id) => db.collection('playerStats').where('playerId', '==', id).get())),
+      ]);
 
-      if (playerIds.length !== 10) {
-        throw new Error('Exactly 10 players are required');
-      }
-
-      // Fetch player data
-      const playerDocs = await Promise.all(
-        playerIds.map(playerId => db.collection('players').doc(playerId).get())
-      );
-
-      // Fetch all stats for these players
-      const playerStatsPromises = playerIds.map(playerId =>
-        db.collection('playerStats').where('playerId', '==', playerId).get()
-      );
-      const playerStatsSnapshots = await Promise.all(playerStatsPromises);
-
-      // Build player profiles with their stats
-      const playerProfiles = playerDocs.map((doc, index) => {
+      const playerProfiles: PlayerProfile[] = playerDocs.map((doc, index) => {
         if (!doc.exists) {
-          throw new Error(`Player ${playerIds[index]} not found`);
+          throw new TeamBuildError(`Oyuncu bulunamadı: ${playerIds[index]}`);
         }
 
-        const playerData = doc.data();
-        const fullName = `${playerData?.firstName || ''} ${playerData?.lastName || ''}`.trim();
-        const displayName = playerData?.nickname || fullName || 'Unknown';
+        const data = doc.data();
+        const fullName = `${data?.firstName || ''} ${data?.lastName || ''}`.trim();
+        const displayName = data?.nickname || fullName || 'Bilinmiyor';
 
-        // Calculate average stats
-        const stats = playerStatsSnapshots[index].docs.map(doc => doc.data());
+        const stats = playerStatsSnapshots[index].docs.map((d) => d.data());
         const gamesPlayed = stats.length;
 
         if (gamesPlayed === 0) {
           return {
             id: playerIds[index],
             name: displayName,
-            position: playerData?.position || 'Unknown',
-            height: playerData?.height || 0,
-            badges: playerData?.badges || [],
+            position: data?.position || 'N/A',
+            height: data?.height || 0,
+            badges: data?.badges || [],
             gamesPlayed: 0,
             avgPoints: 0,
             avgRebounds: 0,
             avgAssists: 0,
-            twoPointPercentage: 0,
-            threePointPercentage: 0,
+            twoPointPct: 0,
+            threePointPct: 0,
           };
         }
 
-        const totalPoints = stats.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
-        const totalRebounds = stats.reduce((sum, s) => sum + (s.totalRebounds || 0), 0);
-        const totalAssists = stats.reduce((sum, s) => sum + (s.assists || 0), 0);
-        const total2PMade = stats.reduce((sum, s) => sum + (s.twoPointMade || 0), 0);
-        const total2PAttempts = stats.reduce((sum, s) => sum + (s.twoPointAttempts || 0), 0);
-        const total3PMade = stats.reduce((sum, s) => sum + (s.threePointMade || 0), 0);
-        const total3PAttempts = stats.reduce((sum, s) => sum + (s.threePointAttempts || 0), 0);
+        const totals = stats.reduce(
+          (acc, s) => ({
+            points: acc.points + (s.totalPoints || 0),
+            rebounds: acc.rebounds + (s.totalRebounds || 0),
+            assists: acc.assists + (s.assists || 0),
+            twoPM: acc.twoPM + (s.twoPointMade || 0),
+            twoPA: acc.twoPA + (s.twoPointAttempts || 0),
+            threePM: acc.threePM + (s.threePointMade || 0),
+            threePA: acc.threePA + (s.threePointAttempts || 0),
+          }),
+          { points: 0, rebounds: 0, assists: 0, twoPM: 0, twoPA: 0, threePM: 0, threePA: 0 }
+        );
 
         return {
           id: playerIds[index],
           name: displayName,
-          position: playerData?.position || 'Unknown',
-          height: playerData?.height || 0,
-          badges: playerData?.badges || [],
+          position: data?.position || 'N/A',
+          height: data?.height || 0,
+          badges: data?.badges || [],
           gamesPlayed,
-          avgPoints: totalPoints / gamesPlayed,
-          avgRebounds: totalRebounds / gamesPlayed,
-          avgAssists: totalAssists / gamesPlayed,
-          twoPointPercentage: total2PAttempts > 0 ? (total2PMade / total2PAttempts) * 100 : 0,
-          threePointPercentage: total3PAttempts > 0 ? (total3PMade / total3PAttempts) * 100 : 0,
+          avgPoints: totals.points / gamesPlayed,
+          avgRebounds: totals.rebounds / gamesPlayed,
+          avgAssists: totals.assists / gamesPlayed,
+          twoPointPct: totals.twoPA > 0 ? (totals.twoPM / totals.twoPA) * 100 : 0,
+          threePointPct: totals.threePA > 0 ? (totals.threePM / totals.threePA) * 100 : 0,
         };
       });
 
-      // Build prompt
-      const prompt = `10 oyuncuyu 2 dengeli basketbol takımına ayır. Her takımda 5 oyuncu olmalı. Takımlar mümkün olduğunca dengeli olmalı (toplam yetenek, pozisyonlar, boy, rozetler vb.).
+      const playerDataStr = buildPlayerDataString(playerProfiles);
 
-**Oyuncu İstatistikleri:**
-${playerProfiles.map(p => `
-- ${p.name} (${p.position})
-  * Boy: ${p.height} cm
-  * Rozetler: ${p.badges.length > 0 ? p.badges.join(', ') : 'Yok'}
-  * ${p.gamesPlayed} maç oynadı
-  * Ortalama: ${p.avgPoints.toFixed(1)} sayı, ${p.avgRebounds.toFixed(1)} ribaund, ${p.avgAssists.toFixed(1)} asist
-  * 2P: %${p.twoPointPercentage.toFixed(1)}, 3P: %${p.threePointPercentage.toFixed(1)}
-`).join('\n')}
+      const nameToIdMap = new Map<string, string>();
+      playerProfiles.forEach((p) => {
+        nameToIdMap.set(p.name.toLowerCase(), p.id);
+        nameToIdMap.set(p.id.toLowerCase(), p.id);
+      });
 
-Lütfen şu formatta cevap ver:
+      const systemPrompt = `Basketbol kadro uzmanısın. Sadece JSON yanıt ver, başka metin ekleme. Markdown kullanma.`;
 
-**TAKIM A:**
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
+      const userPrompt = `10 oyuncuyu 2 dengeli takıma ayır. Her takım 5 kişi.
 
-**TAKIM B:**
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
-- [Oyuncu İsmi]
+Kriterler (önem sırasıyla): skor kapasitesi, pozisyon dengesi, boy dengesi, rozetler.
 
-**DENGE ANALİZİ:**
-[Kısa açıklama: Neden bu takımlar dengeli? Her takımın güçlü yönleri neler?]`;
+OYUNCU_ID | İsim | Poz | Boy | Maç | Sayı | Rib | Ast | 2P% | 3P% | Rozetler
+${playerDataStr}
 
-      // Call OpenAI API with economical settings
+ÖNEMLİ: Yanıtta SADECE ilk sütundaki OYUNCU_ID değerlerini kullan. İsim kullanma!
+
+Yanıt formatı (sadece JSON, markdown yok):
+{"teamA":["OYUNCU_ID_1","OYUNCU_ID_2","OYUNCU_ID_3","OYUNCU_ID_4","OYUNCU_ID_5"],"teamB":["OYUNCU_ID_6","OYUNCU_ID_7","OYUNCU_ID_8","OYUNCU_ID_9","OYUNCU_ID_10"],"analysis":"Kısa analiz"}`;
+
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: 'Sen basketbol takım kurma uzmanısın. Oyuncu istatistiklerine, boylarına, pozisyonlarına ve rozetlerine göre dengeli takımlar oluşturursun. Boy farkını, pozisyon dengesini ve oyuncu rozetlerini (yeteneklerini) dikkate alarak takımları dengelersin. Türkçe yazarsın.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
-        temperature: 0.8,
-        max_tokens: 1000,
+        temperature: 0.3,
+        max_tokens: 400,
+        response_format: { type: 'json_object' },
       });
 
-      const response = completion.choices[0]?.message?.content || 'Takımlar oluşturulamadı.';
+      const responseContent = completion.choices[0]?.message?.content;
+      const parsed = safeParseJSON<OpenAITeamBuildResult>(responseContent);
 
-      // Calculate cost
-      // GPT-4o-mini pricing: $0.150 per 1M input tokens, $0.600 per 1M output tokens
-      const usage = completion.usage;
-      const promptTokens = usage?.prompt_tokens || 0;
-      const completionTokens = usage?.completion_tokens || 0;
-      const totalTokens = usage?.total_tokens || 0;
+      let resolvedResult: OpenAITeamBuildResult | null = null;
+      if (parsed && Array.isArray(parsed.teamA) && Array.isArray(parsed.teamB)) {
+        const resolvedTeamA = parsed.teamA.map((val: string) => nameToIdMap.get(val.toLowerCase()) || val);
+        const resolvedTeamB = parsed.teamB.map((val: string) => nameToIdMap.get(val.toLowerCase()) || val);
+        resolvedResult = { teamA: resolvedTeamA, teamB: resolvedTeamB, analysis: parsed.analysis || '' };
+      }
 
-      const inputCost = (promptTokens / 1_000_000) * 0.150;
-      const outputCost = (completionTokens / 1_000_000) * 0.600;
-      const totalCost = inputCost + outputCost;
+      if (!resolvedResult || !validateTeamBuildResult(resolvedResult, playerIds)) {
+        console.error('Geçersiz OpenAI cevabı:', responseContent);
 
-      // Parse team assignments from response
-      const teamA: string[] = [];
-      const teamB: string[] = [];
+        const sorted = [...playerProfiles].sort((a, b) => b.avgPoints - a.avgPoints);
+        const fallbackTeamA: string[] = [];
+        const fallbackTeamB: string[] = [];
 
-      const lines = response.split('\n');
-      let currentTeam: 'A' | 'B' | null = null;
+        sorted.forEach((p, i) => {
+          if (i % 2 === 0) fallbackTeamA.push(p.id);
+          else fallbackTeamB.push(p.id);
+        });
 
-      for (const line of lines) {
-        if (line.includes('TAKIM A') || line.includes('TEAM A')) {
-          currentTeam = 'A';
-          continue;
-        }
-        if (line.includes('TAKIM B') || line.includes('TEAM B')) {
-          currentTeam = 'B';
-          continue;
-        }
-        if (line.includes('DENGE') || line.includes('ANALİZ')) {
-          currentTeam = null;
-          continue;
-        }
-
-        // Extract player name from line like "- Player Name"
-        if (currentTeam && line.trim().startsWith('-')) {
-          const playerName = line.trim().substring(1).trim();
-          // Find matching player ID
-          const player = playerProfiles.find(p => p.name === playerName);
-          if (player) {
-            if (currentTeam === 'A') {
-              teamA.push(player.id);
-            } else {
-              teamB.push(player.id);
-            }
-          }
-        }
+        return {
+          teamA: fallbackTeamA,
+          teamB: fallbackTeamB,
+          analysis: 'AI yanıtı işlenemedi. Sayı ortalamasına göre basit dağıtım yapıldı.',
+        };
       }
 
       return {
-        teamA,
-        teamB,
-        analysis: response,
-        cost: totalCost,
-        tokenUsage: {
-          promptTokens,
-          completionTokens,
-          totalTokens,
-        },
+        teamA: resolvedResult.teamA,
+        teamB: resolvedResult.teamB,
+        analysis: resolvedResult.analysis,
       };
     } catch (error) {
-      throw new Error('Failed to build balanced teams');
+      if (
+        error instanceof OpenAIQuotaError ||
+        error instanceof OpenAIRateLimitError ||
+        error instanceof OpenAIServiceError ||
+        error instanceof TeamBuildError
+      ) {
+        throw error;
+      }
+
+      handleOpenAIError(error);
     }
   },
 
-  /**
-   * Generate AI analysis for a basketball match
-   */
   async generateMatchAnalysis(gameId: string): Promise<string> {
-    try {
+    if (!apiKey) {
+      throw new OpenAIServiceError('OpenAI API bulunamadı');
+    }
 
-      // Fetch all necessary data
-      const [playerStats, teamStats, game] = await Promise.all([
+    try {
+      const [playerStatsSnap, teamStatsSnap, gameDoc] = await Promise.all([
         db.collection('playerStats').where('gameId', '==', gameId).get(),
         db.collection('teamStats').where('gameId', '==', gameId).get(),
         db.collection('games').doc(gameId).get(),
       ]);
 
-
-      if (!game.exists) {
-        throw new Error('Game not found');
+      if (!gameDoc.exists) {
+        throw new OpenAIServiceError('Maç bilgisi bulunamadı');
       }
 
-      const gameData = game.data();
-
-      const playerIds = playerStats.docs.map(doc => doc.data().playerId);
+      const gameData = gameDoc.data();
+      const playerIds = playerStatsSnap.docs.map((doc) => doc.data().playerId);
 
       const playerDocs = await Promise.all(
-        playerIds.map(playerId => db.collection('players').doc(playerId).get())
+        playerIds.map((id) => db.collection('players').doc(id).get())
       );
 
-      // Create a map of playerId -> playerName
       const playerNameMap = new Map<string, string>();
       playerDocs.forEach((doc, index) => {
         if (doc.exists) {
-          const playerData = doc.data();
-          const fullName = `${playerData?.firstName || ''} ${playerData?.lastName || ''}`.trim();
-          const displayName = playerData?.nickname || fullName || 'Unknown';
-          playerNameMap.set(playerIds[index], displayName);
+          const data = doc.data();
+          const fullName = `${data?.firstName || ''} ${data?.lastName || ''}`.trim();
+          playerNameMap.set(playerIds[index], data?.nickname || fullName || 'Bilinmiyor');
         } else {
-          playerNameMap.set(playerIds[index], 'Unknown');
+          playerNameMap.set(playerIds[index], 'Bilinmiyor');
         }
       });
 
-      // Parse player stats with fetched player names
-      const players = playerStats.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          playerId: data.playerId,
-          playerName: playerNameMap.get(data.playerId) || 'Unknown',
-          teamType: data.teamType,
-          totalPoints: data.totalPoints,
-          totalRebounds: data.totalRebounds,
-          assists: data.assists,
-          twoPointMade: data.twoPointMade,
-          twoPointAttempts: data.twoPointAttempts,
-          threePointMade: data.threePointMade,
-          threePointAttempts: data.threePointAttempts,
-          offensiveRebounds: data.offensiveRebounds,
-          defensiveRebounds: data.defensiveRebounds,
-        };
-      });
+      const playerStatsStr = playerStatsSnap.docs
+        .map((doc) => {
+          const d = doc.data();
+          const name = playerNameMap.get(d.playerId) || 'N/A';
+          return `${name}(${d.teamType}):${d.totalPoints}p,${d.totalRebounds}r(${d.offensiveRebounds}o/${d.defensiveRebounds}d),${d.assists}a,2P:${d.twoPointMade}/${d.twoPointAttempts},3P:${d.threePointMade}/${d.threePointAttempts}`;
+        })
+        .join('\n');
 
-      // Parse team stats
-      const teams = teamStats.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          teamType: data.teamType,
-          totalPoints: data.totalPoints,
-          totalRebounds: data.totalRebounds,
-          totalAssists: data.totalAssists,
-          twoPointPercentage: data.twoPointPercentage,
-          threePointPercentage: data.threePointPercentage,
-        };
-      });
+      const teamStatsStr = teamStatsSnap.docs
+        .map((doc) => {
+          const d = doc.data();
+          return `${d.teamType}:${d.totalPoints}p,${d.totalRebounds}r,${d.assists}a,2P%:${d.twoPointPercentage?.toFixed(1)},3P%:${d.threePointPercentage?.toFixed(1)}`;
+        })
+        .join(' | ');
 
-      // Prepare the prompt for OpenAI
-      const prompt = `Sen bir basketbol maç analizcisindir. Aşağıdaki maç verilerini analiz et ve profesyonel bir analiz yaz. Analiz Türkçe olmalı ve şu konuları içermeli:
+      const gameDate = new Date(gameData?.date?.toDate?.() || gameData?.date).toLocaleDateString(
+        'tr-TR'
+      );
 
-**Maç Bilgisi:**
-- Maç Numarası: ${gameData?.gameNumber}
-- Tarih: ${new Date(gameData?.date?.toDate?.() || gameData?.date).toLocaleDateString('tr-TR')}
-- Skor: Team A ${gameData?.teamAScore} - ${gameData?.teamBScore} Team B
+      const systemPrompt = `Profesyonel basketbol maç analizcisisin. Türkçe yaz.`;
 
-**Takım İstatistikleri:**
-${teams.map(team => `
-${team.teamType}:
-- Toplam Sayı: ${team.totalPoints}
-- Toplam Ribaund: ${team.totalRebounds}
-- Toplam Asist: ${team.totalAssists}
-- 2 Sayı Yüzdesi: ${team.twoPointPercentage?.toFixed(1)}%
-- 3 Sayı Yüzdesi: ${team.threePointPercentage?.toFixed(1)}%
-`).join('\n')}
+      const userPrompt = `Maç Analizi Yaz.
 
-**Oyuncu İstatistikleri:**
-${players.map(p => `
-- ${p.playerName} (${p.teamType}): ${p.totalPoints} sayı, ${p.totalRebounds} ribaund, ${p.assists} asist
-  2P: ${p.twoPointMade}/${p.twoPointAttempts}, 3P: ${p.threePointMade}/${p.threePointAttempts}
-`).join('\n')}
+Maç: #${gameData?.gameNumber} (${gameDate})
+Skor: A ${gameData?.teamAScore} - ${gameData?.teamBScore} B
 
-Lütfen şu başlıklar altında detaylı bir analiz yaz:
-1. **Maç Özeti**: Maçın genel akışı ve sonucu
-2. **Dikkat Çeken Performanslar**: En iyi performans gösteren oyuncular ve maçın MVP'si
-3. **Takım Analizleri**: Her iki takımın güçlü ve zayıf yönleri
-4. **Stratejik Gözlemler**: Taktiksel öneriler ve gözlemler
+Takımlar: ${teamStatsStr}
 
-Analiz profesyonel, bilgilendirici ve okuyucuyu cezbedici olmalı. Markdown formatında yaz.`;
+Oyuncular:
+${playerStatsStr}
 
-      // Call OpenAI API
+Markdown formatında yaz. Başlıklar:
+1. Maç Özeti (1-2 paragraf)
+2. Öne Çıkan Oyuncular (2-3 kişi, MVP seç)
+3. Takım Değerlendirmesi
+4. Stratejik Notlar (2 madde)
+
+Max 400 kelime. Verilere dayan.`;
+
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: 'Sen profesyonel bir basketbol maç analizcisin. Detaylı, objektif ve bilgilendirici analizler yaparsın. Türkçe yazarsın.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
-        temperature: 0.7,
-        max_tokens: 2500,
+        temperature: 0.6,
+        max_tokens: 800,
       });
 
-      const analysis = completion.choices[0]?.message?.content || 'Analiz oluşturulamadı.';
+      const analysis = completion.choices[0]?.message?.content;
+
+      if (!analysis) {
+        throw new OpenAIServiceError('Analiz oluşturulamadı');
+      }
 
       return analysis;
     } catch (error) {
-      console.error('Error generating match analysis:', error);
-      throw new Error('Failed to generate match analysis');
+      if (
+        error instanceof OpenAIQuotaError ||
+        error instanceof OpenAIRateLimitError ||
+        error instanceof OpenAIServiceError
+      ) {
+        throw error;
+      }
+
+      handleOpenAIError(error);
     }
   },
 };

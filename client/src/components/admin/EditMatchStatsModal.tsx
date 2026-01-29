@@ -43,7 +43,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
 
   useEffect(() => {
     loadMatchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
   const loadMatchData = async () => {
@@ -51,19 +50,15 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
       setLoading(true);
       setError(null);
 
-      // Fetch game data
       const game = await gameApi.getGameById(gameId);
 
-      // Fetch teams
       const teams = await teamApi.getTeamsByGameId(gameId);
       const teamA = teams.find(t => t.teamType === 'TEAM_A');
       const teamB = teams.find(t => t.teamType === 'TEAM_B');
 
-      // Map player IDs to player objects
       const teamAPlayers = teamA?.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean) as Player[] || [];
       const teamBPlayers = teamB?.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean) as Player[] || [];
 
-      // Fetch player stats
       const playerStats = await playerStatsApi.getPlayerStatsByGameId(gameId);
       const formattedStats: PlayerStatsInput[] = playerStats.map(stat => {
         const player = players.find(p => p.id === stat.playerId);
@@ -81,7 +76,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
         };
       });
 
-      // Fetch existing videos
       const gameVideos = await videoApi.getVideosByGameId(gameId);
 
       setMetadata({
@@ -101,7 +95,7 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
 
       setLoading(false);
     } catch (err) {
-      console.error('Failed to load match data:', err);
+      console.error('Maç detayı getirilirken bir hata oluştu:', err);
       const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
       setError(`Maç verileri yüklenirken bir hata oluştu: ${errorMessage}`);
       setLoading(false);
@@ -134,7 +128,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
       setExistingVideos((prev) => prev.filter((v) => v.id !== videoId));
     } catch (error: any) {
       console.error('Failed to delete video:', error);
-      // If it's a 404, the video is already deleted, so just remove it from UI
       if (error?.response?.status === 404) {
         setExistingVideos((prev) => prev.filter((v) => v.id !== videoId));
       } else {
@@ -168,7 +161,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
     }
   };
 
-  // Get all players from both teams for video tagging
   const allMatchPlayers = [...teamPlayers.teamA, ...teamPlayers.teamB];
 
   if (loading) {
@@ -201,7 +193,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
-        {/* Header */}
         <div className="sticky top-0 bg-orange-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg z-10">
           <h2 className="text-2xl font-bold">
             Maç Detaylarını Düzenle - Adım {step}/3
@@ -214,7 +205,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           {step === 1 ? (
             <TeamPlayerSelection
@@ -241,7 +231,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
                 </p>
               </div>
 
-              {/* Existing Videos */}
               {existingVideos.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-4">
@@ -294,7 +283,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
                 </div>
               )}
 
-              {/* Add New Videos */}
               <VideoUploadForm
                 gameId={gameId}
                 availablePlayers={allMatchPlayers}
@@ -303,7 +291,6 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
                 videos={videos}
               />
 
-              {/* Action Buttons */}
               <div className="flex gap-4">
                 <button
                   onClick={handleBack}

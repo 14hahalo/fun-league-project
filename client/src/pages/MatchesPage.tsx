@@ -16,7 +16,6 @@ export const MatchesPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black py-12 px-4">
       <div className="max-w-8xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
 
           <div className="mt-6 flex items-center justify-center gap-3">

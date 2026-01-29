@@ -13,12 +13,12 @@ interface PlayerStatsListProps {
 export const PlayerStatsList = ({ playerStats, players, games, onEdit, onDelete }: PlayerStatsListProps) => {
   const getPlayerName = (playerId: string) => {
     const player = players.find((p) => p.id === playerId);
-    return player ? `#${player.jerseyNumber} ${player.firstName} ${player.lastName}` : 'Unknown Player';
+    return player ? `#${player.jerseyNumber} ${player.firstName} ${player.lastName}` : 'Bilinmiyor Player';
   };
 
   const getGameInfo = (gameId: string) => {
     const game = games.find((g) => g.id === gameId);
-    return game ? `Maç #${game.gameNumber} - ${new Date(game.date).toLocaleDateString('tr-TR')}` : 'Unknown Game';
+    return game ? `Maç #${game.gameNumber} - ${new Date(game.date).toLocaleDateString('tr-TR')}` : 'Bilinmiyor Game';
   };
 
   return (

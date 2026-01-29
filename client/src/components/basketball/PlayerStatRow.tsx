@@ -34,7 +34,7 @@ export const PlayerStatRow: React.FC<PlayerStatRowProps> = ({
             )}
           </div>
           <div>
-            <p className="font-medium text-gray-900">{stats.playerNickname || 'Unknown'}</p>
+            <p className="font-medium text-gray-900">{stats.playerNickname || 'Bilinmiyor'}</p>
             {stats.playerName && (
               <p className="text-xs text-gray-500">{stats.playerName}</p>
             )}

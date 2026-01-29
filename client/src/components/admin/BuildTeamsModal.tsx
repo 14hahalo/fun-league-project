@@ -16,12 +16,6 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
     teamA: string[];
     teamB: string[];
     analysis: string;
-    cost: number;
-    tokenUsage: {
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
-    };
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +57,7 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
 
   const getPlayerName = (playerId: string) => {
     const player = players.find((p) => p.id === playerId);
-    if (!player) return 'Unknown';
+    if (!player) return 'Bilinmiyor';
     return player.nickname || `${player.firstName} ${player.lastName}`;
   };
 
@@ -117,7 +111,6 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
               </div>
             )}
 
-            {/* Player Selection Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 max-h-96 overflow-y-auto">
               {players.map((player) => {
                 const isSelected = selectedPlayers.includes(player.id);
@@ -155,7 +148,6 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
               })}
             </div>
 
-            {/* Build Teams Button */}
             <div className="flex gap-4">
               <button
                 onClick={handleBuildTeams}
@@ -178,28 +170,8 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
           </>
         ) : (
           <>
-            {/* Results Display */}
             <div className="space-y-6">
-              {/* Cost Information */}
-              <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-green-300 font-bold text-lg">💰 Maliyet Bilgisi</div>
-                    <div className="text-gray-300 text-sm mt-1">
-                      Prompt: {result.tokenUsage.promptTokens} tokens •
-                      Completion: {result.tokenUsage.completionTokens} tokens •
-                      Toplam: {result.tokenUsage.totalTokens} tokens
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-green-400">
-                    ${result.cost.toFixed(6)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Teams Display */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Team A */}
                 <div className="p-6 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/50 rounded-xl">
                   <h3 className="text-2xl font-bold text-blue-400 mb-4 flex items-center gap-2">
                     🔵 Takım A
@@ -217,7 +189,6 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
                   </div>
                 </div>
 
-                {/* Team B */}
                 <div className="p-6 bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/50 rounded-xl">
                   <h3 className="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
                     🔴 Takım B
@@ -236,19 +207,18 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              {/* AI Analysis */}
               <div className="p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/50 rounded-xl">
                 <h3 className="text-2xl font-bold text-purple-400 mb-4">🎯 AI Analizi</h3>
                 <div className="prose prose-invert max-w-none">
                   <ReactMarkdown
                     components={{
-                      h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-3">{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-xl font-bold text-gray-200 mb-2 mt-4">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-lg font-bold text-gray-300 mb-2">{children}</h3>,
-                      p: ({ children }) => <p className="text-gray-300 mb-3 leading-relaxed">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc list-inside text-gray-300 mb-3 space-y-1">{children}</ul>,
-                      li: ({ children }) => <li className="text-gray-300">{children}</li>,
-                      strong: ({ children }) => <strong className="text-orange-400 font-bold">{children}</strong>,
+                      h1: ({ children }: any) => <h1 className="text-2xl font-bold text-white mb-3">{children}</h1>,
+                      h2: ({ children }: any) => <h2 className="text-xl font-bold text-gray-200 mb-2 mt-4">{children}</h2>,
+                      h3: ({ children }: any) => <h3 className="text-lg font-bold text-gray-300 mb-2">{children}</h3>,
+                      p: ({ children }: any) => <p className="text-gray-300 mb-3 leading-relaxed">{children}</p>,
+                      ul: ({ children }: any) => <ul className="list-disc list-inside text-gray-300 mb-3 space-y-1">{children}</ul>,
+                      li: ({ children }: any) => <li className="text-gray-300">{children}</li>,
+                      strong: ({ children }: any) => <strong className="text-orange-400 font-bold">{children}</strong>,
                     }}
                   >
                     {result.analysis}
@@ -256,7 +226,6 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-4">
                 <button
                   onClick={() => {

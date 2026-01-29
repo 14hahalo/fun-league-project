@@ -5,7 +5,6 @@ import { CreatePlayerStatsDto } from "../dtos/PlayerStats/CreatePlayerStatsDTO";
 import { UpdatePlayerStatsDto } from "../dtos/PlayerStats/UpdatePlayerStatsDTO";
 
 export class PlayerStatsController {
-  // Create player stats
   static async createPlayerStats(
     req: Request,
     res: Response,
@@ -15,7 +14,6 @@ export class PlayerStatsController {
       const data: CreatePlayerStatsDto = req.body;
       const playerStats = await PlayerStatsService.createPlayerStats(data);
 
-      // Auto-generate/update team stats
       await TeamStatsService.generateTeamStats(data.gameId, data.teamType);
 
       res.status(201).json({
@@ -28,7 +26,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get player stats by ID
   static async getPlayerStatsById(
     req: Request,
     res: Response,
@@ -47,7 +44,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get all player stats for a game
   static async getPlayerStatsByGameId(
     req: Request,
     res: Response,
@@ -68,7 +64,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get stats for a specific player in a specific game
   static async getPlayerStatsForGame(
     req: Request,
     res: Response,
@@ -98,7 +93,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Update player stats
   static async updatePlayerStats(
     req: Request,
     res: Response,
@@ -109,7 +103,6 @@ export class PlayerStatsController {
       const data: UpdatePlayerStatsDto = req.body;
       const playerStats = await PlayerStatsService.updatePlayerStats(id, data);
 
-      // Get the game ID and team type to update team stats
       const updatedStats = await PlayerStatsService.getPlayerStatsById(id);
       await TeamStatsService.recalculateTeamStats(
         updatedStats.gameId,
@@ -126,7 +119,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Delete player stats
   static async deletePlayerStats(
     req: Request,
     res: Response,
@@ -134,13 +126,9 @@ export class PlayerStatsController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-
-      // Get stats before deletion to recalculate team stats
       const stats = await PlayerStatsService.getPlayerStatsById(id);
-
       await PlayerStatsService.deletePlayerStats(id);
 
-      // Recalculate team stats after deletion
       await TeamStatsService.recalculateTeamStats(
         stats.gameId,
         stats.teamType
@@ -155,7 +143,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get all stats for a specific player across all games
   static async getAllStatsForPlayer(
     req: Request,
     res: Response,
@@ -176,7 +163,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get stats for multiple players at once (BULK ENDPOINT)
   static async getBulkPlayerStats(
     req: Request,
     res: Response,
@@ -188,7 +174,7 @@ export class PlayerStatsController {
       if (!playerIds || !Array.isArray(playerIds)) {
         res.status(400).json({
           success: false,
-          message: "playerIds array is required",
+          message: "playerId dizisi gereklidir",
         });
         return;
       }
@@ -204,7 +190,6 @@ export class PlayerStatsController {
     }
   }
 
-  // Get top players by various stats
   static async getTopPlayers(
     req: Request,
     res: Response,

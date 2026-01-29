@@ -20,7 +20,6 @@ class VideoService {
         updatedAt: new Date(),
       };
 
-      // Only add description if it's provided (Firestore doesn't accept undefined)
       if (videoDto.description) {
         video.description = videoDto.description;
       }
@@ -28,7 +27,7 @@ class VideoService {
       await videoRef.set(video);
       return video as Video;
     } catch (error) {
-      throw new Error(`Error creating video: ${error}`);
+      throw new Error(`Video eklenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -44,10 +43,9 @@ class VideoService {
         } as Video;
       });
 
-      // Sort by createdAt in memory (newest first)
       return videos.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
-      throw new Error(`Error fetching videos: ${error}`);
+      throw new Error(`Videolar listelenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -68,7 +66,7 @@ class VideoService {
         updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
       } as Video;
     } catch (error) {
-      throw new Error(`Error fetching video: ${error}`);
+      throw new Error(`Videolar listelenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -88,10 +86,9 @@ class VideoService {
         } as Video;
       });
 
-      // Sort by createdAt in memory (newest first)
       return videos.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
-      throw new Error(`Error fetching videos for game: ${error}`);
+      throw new Error(`Maçın videoları listelenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -111,10 +108,9 @@ class VideoService {
         } as Video;
       });
 
-      // Sort by createdAt in memory (newest first)
       return videos.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
-      throw new Error(`Error fetching videos for player: ${error}`);
+      throw new Error(`Oyuncunun videoları listelenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -127,7 +123,6 @@ class VideoService {
         return null;
       }
 
-      // Filter out undefined values (Firestore doesn't accept them)
       const updateData: any = {
         updatedAt: new Date(),
       };
@@ -149,7 +144,7 @@ class VideoService {
         updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
       } as Video;
     } catch (error) {
-      throw new Error(`Error updating video: ${error}`);
+      throw new Error(`Video bilgileri güncellenirken bir hata oluştu: ${error}`);
     }
   }
 
@@ -165,7 +160,7 @@ class VideoService {
       await videoRef.delete();
       return true;
     } catch (error) {
-      throw new Error(`Error deleting video: ${error}`);
+      throw new Error(`Video silinirken bir hata oluştu: ${error}`);
     }
   }
 }

@@ -8,10 +8,8 @@ import { FieldValue } from "firebase-admin/firestore";
 export class TeamService {
   private static collection = db.collection("teams");
 
-  // Create team
   static async createTeam(data: CreateTeamDto): Promise<Team> {
     try {
-      // Check if team already exists for this game and team type
       const existingSnapshot = await this.collection
         .where("gameId", "==", data.gameId)
         .where("teamType", "==", data.teamType)
@@ -47,7 +45,6 @@ export class TeamService {
     }
   }
 
-  // Get team by ID
   static async getTeamById(id: string): Promise<Team> {
     try {
       const doc = await this.collection.doc(id).get();
@@ -69,7 +66,6 @@ export class TeamService {
     }
   }
 
-  // Get teams by game ID
   static async getTeamsByGameId(gameId: string): Promise<Team[]> {
     try {
       const snapshot = await this.collection
@@ -90,7 +86,6 @@ export class TeamService {
     }
   }
 
-  // Get specific team for a game
   static async getTeamForGame(
     gameId: string,
     teamType: "TEAM_A" | "TEAM_B"
@@ -120,7 +115,6 @@ export class TeamService {
     }
   }
 
-  // Update team
   static async updateTeam(id: string, data: UpdateTeamDto): Promise<Team> {
     try {
       const docRef = this.collection.doc(id);
@@ -152,7 +146,6 @@ export class TeamService {
     }
   }
 
-  // Delete team
   static async deleteTeam(id: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -169,7 +162,6 @@ export class TeamService {
     }
   }
 
-  // Add player to team
   static async addPlayerToTeam(teamId: string, playerId: string): Promise<Team> {
     try {
       const docRef = this.collection.doc(teamId);
@@ -206,7 +198,6 @@ export class TeamService {
     }
   }
 
-  // Remove player from team
   static async removePlayerFromTeam(
     teamId: string,
     playerId: string

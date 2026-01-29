@@ -3,23 +3,23 @@ import { verifyAccessToken } from '../utils/jwt';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    // Get token from Authorization header
+    // Authorization header'dan token'ı al
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
-        message: 'No token provided',
+        message: 'Token bilgisi eksik',
       });
       return;
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7); // 'Bearer ' önekini kaldır
 
-    // Verify token
+    // Token'ı doğrula
     const payload = verifyAccessToken(token);
 
-    // Attach user info to request object
+    // Kullanıcı bilgilerini request nesnesine ekle
     (req as any).userId = payload.userId;
     (req as any).userEmail = payload.email;
     (req as any).userRole = payload.role;
@@ -28,8 +28,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: 'Invalid or expired token',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Geçersiz token',
+      error: error instanceof Error ? error.message : 'Bilinmeyen Hata',
     });
   }
 };

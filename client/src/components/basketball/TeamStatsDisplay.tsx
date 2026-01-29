@@ -28,7 +28,6 @@ export const TeamStatsDisplay: React.FC<TeamStatsDisplayProps> = ({ stats, teamN
         </div>
       </div>
 
-      {/* Shooting Stats */}
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
           Şut İstatistikleri
@@ -55,7 +54,6 @@ export const TeamStatsDisplay: React.FC<TeamStatsDisplayProps> = ({ stats, teamN
         </div>
       </div>
 
-      {/* Other Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Toplam Ribaund"

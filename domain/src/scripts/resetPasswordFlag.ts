@@ -1,4 +1,4 @@
-// Load environment variables first
+// Kullanıcılar default şifrelerini değiştirdi mi değiştirmedi mi? Ona göre ilk girişte ekranyönlendirmesi yapılacak
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -8,7 +8,6 @@ async function resetPasswordFlag() {
   try {
     const nickname = process.argv[2] || 'Hahalo';
 
-    // Find player by nickname
     const playersSnapshot = await db
       .collection('players')
       .where('nickname', '==', nickname)
@@ -20,7 +19,6 @@ async function resetPasswordFlag() {
 
     const playerDoc = playersSnapshot.docs[0];
 
-    // Update needsPasswordChange flag
     await playerDoc.ref.update({
       needsPasswordChange: true,
       updatedAt: new Date(),

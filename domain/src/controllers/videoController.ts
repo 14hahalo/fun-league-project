@@ -8,11 +8,10 @@ class VideoController {
     try {
       const videoDto: CreateVideoDto = req.body;
 
-      // Validate required fields
       if (!videoDto.gameId || !videoDto.title || !videoDto.youtubeUrl) {
         res.status(400).json({
           success: false,
-          message: 'gameId, title, and youtubeUrl are required'
+          message: 'gameId, Video başlığı ve Youtube kaynak bağlantısı gereklidir'
         });
         return;
       }
@@ -21,13 +20,13 @@ class VideoController {
       res.status(201).json({
         success: true,
         data: video,
-        message: 'Video created successfully'
+        message: 'Video başarılı bir şekilde oluşturuldu '
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to create video',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Video oluşturulurken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -38,13 +37,13 @@ class VideoController {
       res.status(200).json({
         success: true,
         data: videos,
-        message: 'Videos retrieved successfully'
+        message: 'Videolar başarılı bir şekilde getirildi'
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch videos',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Videolar getirilirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -57,7 +56,7 @@ class VideoController {
       if (!video) {
         res.status(404).json({
           success: false,
-          message: 'Video not found'
+          message: 'Video bulunamadık'
         });
         return;
       }
@@ -65,13 +64,13 @@ class VideoController {
       res.status(200).json({
         success: true,
         data: video,
-        message: 'Video retrieved successfully'
+        message: 'Video başarılı bir şekilde getirildi'
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch video',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Video getirilirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -83,13 +82,13 @@ class VideoController {
       res.status(200).json({
         success: true,
         data: videos,
-        message: 'Videos retrieved successfully'
+        message: 'Videolar başarılı bir şekilde çekildi'
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch videos for game',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Maç videoları çekilirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -101,13 +100,13 @@ class VideoController {
       res.status(200).json({
         success: true,
         data: videos,
-        message: 'Videos retrieved successfully'
+        message: 'Videolar başarılu bir şekilde getirildi'
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch videos for player',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Oyuncu videoları çekilirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -122,7 +121,7 @@ class VideoController {
       if (!video) {
         res.status(404).json({
           success: false,
-          message: 'Video not found'
+          message: 'Video bulunamadı'
         });
         return;
       }
@@ -130,13 +129,13 @@ class VideoController {
       res.status(200).json({
         success: true,
         data: video,
-        message: 'Video updated successfully'
+        message: 'Video başarılı bir şekilde güncellendi'
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to update video',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Video bilgisi güncellirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }
@@ -149,7 +148,7 @@ class VideoController {
       if (!success) {
         res.status(404).json({
           success: false,
-          message: 'Video not found'
+          message: 'Video bulunamadı'
         });
         return;
       }
@@ -158,8 +157,8 @@ class VideoController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to delete video',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Video silinirken bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata'
       });
     }
   }

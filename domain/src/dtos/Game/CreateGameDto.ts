@@ -6,4 +6,5 @@ export interface CreateGameDto {
   status?: GameStatus;
   teamSize?: number;
   notes?: string;
+  seasonId?: string;
 }

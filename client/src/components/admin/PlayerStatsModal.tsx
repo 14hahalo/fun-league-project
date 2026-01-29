@@ -29,7 +29,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
 
     try {
       if (editingStats) {
-        // Update existing stats
         const updateData: UpdatePlayerStatsDto = {
           twoPointAttempts,
           twoPointMade,
@@ -41,7 +40,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
         };
         await onSubmit(updateData, editingStats.id);
       } else {
-        // Create new stats
         const createData: CreatePlayerStatsDto = {
           gameId,
           playerId,
@@ -76,7 +74,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!editingStats && (
             <>
-              {/* Game Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Maç *</label>
                 <select
@@ -94,7 +91,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
                 </select>
               </div>
 
-              {/* Player Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Oyuncu *</label>
                 <select
@@ -112,7 +108,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
                 </select>
               </div>
 
-              {/* Team Type */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Takım *</label>
                 <select
@@ -128,9 +123,7 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
             </>
           )}
 
-          {/* Statistics */}
           <div className="grid grid-cols-2 gap-4">
-            {/* 2-Point Stats */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">2 Sayılık Deneme</label>
               <input
@@ -153,7 +146,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
               />
             </div>
 
-            {/* 3-Point Stats */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">3 Sayılık Deneme</label>
               <input
@@ -176,7 +168,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
               />
             </div>
 
-            {/* Rebounds */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Defansif Ribaund</label>
               <input
@@ -198,7 +189,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
               />
             </div>
 
-            {/* Assists */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Asist</label>
               <input
@@ -211,7 +201,6 @@ export const PlayerStatsModal = ({ onClose, onSubmit, players, games, editingSta
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-4 mt-6">
             <button
               type="button"

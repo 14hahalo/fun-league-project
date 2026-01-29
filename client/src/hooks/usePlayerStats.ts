@@ -26,7 +26,6 @@ export const usePlayerStats = (gameId?: string) => {
     if (gameId) {
       fetchPlayerStats();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
   const createPlayerStats = async (data: CreatePlayerStatsDto): Promise<PlayerStats> => {

@@ -5,12 +5,10 @@ import { requireAdmin } from "../middleware/roleMiddleware";
 
 const router = Router();
 
-// Public routes - anyone can view team stats
 router.get("/:id", TeamStatsController.getTeamStatsById);
 router.get("/game/:gameId", TeamStatsController.getTeamStatsByGameId);
 router.get("/game/:gameId/team/:teamType", TeamStatsController.getTeamStatsForGame);
 
-// Admin only routes - manage team stats
 router.post("/generate", authMiddleware, requireAdmin, TeamStatsController.generateTeamStats);
 router.put("/recalculate/:gameId/:teamType", authMiddleware, requireAdmin, TeamStatsController.recalculateTeamStats);
 router.delete("/:id", authMiddleware, requireAdmin, TeamStatsController.deleteTeamStats);

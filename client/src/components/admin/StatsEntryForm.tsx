@@ -31,9 +31,7 @@ export const StatsEntryForm = ({
 }: StatsEntryFormProps) => {
   const [expandedTeam, setExpandedTeam] = useState<'A' | 'B' | 'both'>('both');
 
-  // Initialize stats for all players
   const initializeStats = (): StatsRow[] => {
-    // If we have initial stats (edit mode), use them
     if (initialStats && initialStats.length > 0) {
       return initialStats.map((stat) => ({
         playerId: stat.playerId,
@@ -49,7 +47,6 @@ export const StatsEntryForm = ({
       }));
     }
 
-    // Otherwise initialize with zeros (create mode)
     const teamAStats: StatsRow[] = teamPlayers.teamA.map((player) => ({
       playerId: player.id,
       playerNickname: player.nickname,
@@ -216,7 +213,6 @@ export const StatsEntryForm = ({
 
   return (
     <div className="space-y-6">
-      {/* Match Info Summary */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <h3 className="text-lg font-semibold mb-2 text-gray-800">Maç Bilgileri</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
@@ -237,7 +233,6 @@ export const StatsEntryForm = ({
         </div>
       </div>
 
-      {/* Stats Entry Table */}
       <div className="overflow-x-auto border border-gray-300 rounded-lg">
         <table className="w-full">
           <thead className="bg-gray-100 sticky top-0">
@@ -269,7 +264,6 @@ export const StatsEntryForm = ({
             </tr>
           </thead>
           <tbody>
-            {/* Team A */}
             <tr
               onClick={() => toggleTeam('A')}
               className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600"
@@ -284,7 +278,6 @@ export const StatsEntryForm = ({
             {(expandedTeam === 'A' || expandedTeam === 'both') &&
               teamAStats.map((stat) => renderStatsInput(stat))}
 
-            {/* Team B */}
             <tr
               onClick={() => toggleTeam('B')}
               className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600"
@@ -302,7 +295,6 @@ export const StatsEntryForm = ({
         </table>
       </div>
 
-      {/* Legend */}
       <div className="bg-blue-50 p-4 rounded-lg">
         <h4 className="font-semibold mb-2 text-gray-800">Kısaltmalar:</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-700">
@@ -330,7 +322,6 @@ export const StatsEntryForm = ({
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex justify-between pt-4 border-t">
         <button
           onClick={onBack}

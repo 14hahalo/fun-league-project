@@ -16,7 +16,6 @@ export const useBasketballStats = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all player stats for a game
   const fetchPlayerStatsByGame = useCallback(async (gId: string) => {
     setLoading(true);
     setError(null);
@@ -31,7 +30,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Fetch team stats for a game
   const fetchTeamStatsByGame = useCallback(async (gId: string) => {
     setLoading(true);
     setError(null);
@@ -46,7 +44,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Fetch teams for a game
   const fetchTeamsByGame = useCallback(async (gId: string) => {
     setLoading(true);
     setError(null);
@@ -61,7 +58,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Fetch all data for a game
   const fetchAllGameData = useCallback(async (gId: string) => {
     setLoading(true);
     setError(null);
@@ -82,7 +78,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Create player stats
   const createPlayerStats = useCallback(async (data: CreatePlayerStatsDto): Promise<PlayerStats> => {
     setLoading(true);
     setError(null);
@@ -100,7 +95,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Update player stats
   const updatePlayerStats = useCallback(async (id: string, data: UpdatePlayerStatsDto): Promise<PlayerStats> => {
     setLoading(true);
     setError(null);
@@ -118,7 +112,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Delete player stats
   const deletePlayerStats = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -135,7 +128,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Create team
   const createTeam = useCallback(async (data: CreateTeamDto): Promise<Team> => {
     setLoading(true);
     setError(null);
@@ -153,7 +145,6 @@ export const useBasketballStats = () => {
     }
   }, []);
 
-  // Generate/recalculate team stats
   const generateTeamStats = useCallback(async (gId: string, teamType: string): Promise<TeamStats> => {
     setLoading(true);
     setError(null);

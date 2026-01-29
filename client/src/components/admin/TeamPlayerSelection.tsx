@@ -38,7 +38,6 @@ export const TeamPlayerSelection = ({
 
   const handleTeamSizeChange = (size: number) => {
     setTeamSize(size);
-    // Resize teams - keep existing players if they fit, otherwise reset
     if (size < teamA.length) {
       setTeamA(teamA.slice(0, size));
       setTeamB(teamB.slice(0, size));
@@ -106,7 +105,6 @@ export const TeamPlayerSelection = ({
 
   return (
     <div className="space-y-6">
-      {/* Match Metadata */}
       <div className="bg-gray-50 p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-4 text-gray-800">Maç Bilgileri</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -162,13 +160,11 @@ export const TeamPlayerSelection = ({
         </div>
       </div>
 
-      {/* Team Selection */}
       <div>
         <h3 className="text-lg font-semibold mb-4 text-gray-800">
           Takım Oyuncuları (Her takımdan {teamSize} oyuncu seçiniz)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Team A */}
           <div className="border border-gray-300 rounded-lg p-4">
             <h4 className="text-md font-semibold mb-3 text-orange-600 text-center">
               Takım A
@@ -213,7 +209,6 @@ export const TeamPlayerSelection = ({
             </div>
           </div>
 
-          {/* Team B */}
           <div className="border border-gray-300 rounded-lg p-4">
             <h4 className="text-md font-semibold mb-3 text-blue-600 text-center">
               Takım B
@@ -260,7 +255,6 @@ export const TeamPlayerSelection = ({
         </div>
       </div>
 
-      {/* Player Selection Modal */}
       {selectingFor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[70vh] overflow-hidden mx-4">
@@ -309,7 +303,6 @@ export const TeamPlayerSelection = ({
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="flex justify-end space-x-4 pt-4 border-t">
         <button
           onClick={onCancel}

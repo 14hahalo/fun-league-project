@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from sessionStorage on mount
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -44,14 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authService.login({ nickname, password });
 
-      // Store tokens and user in sessionStorage
       sessionStorage.setItem(TOKEN_KEY, response.accessToken);
       sessionStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
       sessionStorage.setItem(USER_KEY, JSON.stringify(response.player));
 
       setUser(response.player);
 
-      // Return true if password needs to be changed
       return response.needsPasswordChange;
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -68,7 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       await authService.changePassword({ newPassword });
 
-      // Update user to reflect password change
       if (user) {
         const updatedUser = { ...user, needsPasswordChange: false };
         sessionStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
@@ -98,7 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await authService.refreshToken(refreshToken);
 
-      // Update tokens in sessionStorage
       sessionStorage.setItem(TOKEN_KEY, response.accessToken);
       sessionStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
     } catch (error) {
@@ -129,12 +124,10 @@ export const useAuth = () => {
   return context;
 };
 
-// Helper function to get access token
 export const getAccessToken = (): string | null => {
   return sessionStorage.getItem(TOKEN_KEY);
 };
 
-// Helper function to get refresh token
 export const getRefreshToken = (): string | null => {
   return sessionStorage.getItem(REFRESH_TOKEN_KEY);
 };

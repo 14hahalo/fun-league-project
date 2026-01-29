@@ -25,8 +25,7 @@ export const errorHandler = (
     });
   }
 
-  // Beklenmeyen hatalar
-  console.error("ERROR 💥", err);
+  console.error("HATA 💥", err);
   return res.status(500).json({
     status: "error",
     message: "Bir şeyler yanlış gitti!",

@@ -26,7 +26,6 @@ export const PlayerRatingsListModal = ({
         className="bg-gradient-to-br from-gray-900 via-gray-800 to-black border-2 border-pink-500/30 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-[0_0_100px_rgba(236,72,153,0.3)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="relative bg-gradient-to-r from-pink-600 via-red-500 to-orange-500 p-6 overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div
@@ -75,7 +74,6 @@ export const PlayerRatingsListModal = ({
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)] custom-scrollbar">
           {sortedRatings.length === 0 ? (
             <div className="text-center py-16 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700">
@@ -90,7 +88,6 @@ export const PlayerRatingsListModal = ({
                 const isMVP = rating.isMVP;
                 const rank = index + 1;
 
-                // Medal colors for top 3
                 const rankBadgeStyle =
                   rank === 1
                     ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg border-4 border-yellow-300"
@@ -118,7 +115,6 @@ export const PlayerRatingsListModal = ({
                     )}
 
                     <div className="flex items-center gap-4">
-                      {/* Rank Badge */}
                       <div
                         className={`w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl flex-shrink-0 ${rankBadgeStyle}`}
                       >
@@ -133,7 +129,6 @@ export const PlayerRatingsListModal = ({
                         )}
                       </div>
 
-                      {/* Player Info */}
                       <div className="flex-1 min-w-0">
                         <h3
                           className={`text-2xl font-black mb-1 truncate ${
@@ -149,7 +144,6 @@ export const PlayerRatingsListModal = ({
                         </p>
                       </div>
 
-                      {/* Rating Display */}
                       <div className="flex-shrink-0">
                         <div
                           className={`rounded-2xl px-6 py-4 ${
@@ -189,7 +183,6 @@ export const PlayerRatingsListModal = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 border-t-2 border-pink-500/30">
           <button
             onClick={onClose}

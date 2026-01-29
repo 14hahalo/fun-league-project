@@ -1,30 +1,24 @@
 import Redis from 'ioredis';
 
-/**
- * Redis Cache Service
- * Provides centralized caching to reduce Firebase reads
- */
 class CacheService {
   private redis: Redis | null = null;
   private isEnabled: boolean = false;
 
-  // TTL values in seconds
+  //Türlere göre time intervallerin belirlendiği yerler
   private readonly TTL = {
-    PLAYERS: 3600, // 1 hour (players rarely change)
-    GAMES: 1800, // 30 minutes (completed games don't change)
-    STATS: 1800, // 30 minutes (stats are final after game ends)
-    TOP_PLAYERS: 600, // 10 minutes (needs more frequent updates for leaderboards)
-    VIDEOS: 1800, // 30 minutes (videos rarely change)
-    TEAMS: 1800, // 30 minutes (team rosters are stable)
+    PLAYERS: 3600,
+    GAMES: 1800,
+    STATS: 1800,
+    TOP_PLAYERS: 600,
+    VIDEOS: 1800,
+    TEAMS: 1800,
+    SEASONS: 1800
   };
 
   constructor() {
     this.initialize();
   }
 
-  /**
-   * Initialize Redis connection
-   */
   private async initialize() {
     try {
       this.redis = new Redis({
@@ -32,21 +26,17 @@ class CacheService {
         port: parseInt(process.env.REDIS_PORT || '10610'),
         username: process.env.REDIS_USERNAME || undefined,
         password: process.env.REDIS_PASSWORD || undefined,
-        // Connection pool settings for 100+ concurrent users
         maxRetriesPerRequest: 3,
         enableReadyCheck: true,
         enableOfflineQueue: true,
-        connectTimeout: 10000, // 10 seconds
-        // Keep connection alive
-        keepAlive: 30000, // 30 seconds
-        // Reconnection strategy
-        retryStrategy: (times) => {
-          // Retry up to 5 times (increased from 3)
+        connectTimeout: 10000, 
+        keepAlive: 30000, 
+        retryStrategy: (times: number) => {
           if (times > 5) {
-            console.warn('[CACHE] Redis unavailable after 5 retries, caching disabled');
+            console.warn('Redis unavailable after 5 retries, caching disabled');
             return null;
           }
-          return Math.min(times * 500, 2000); // Exponential backoff
+          return Math.min(times * 500, 2000);
         },
       });
 
@@ -54,24 +44,20 @@ class CacheService {
         this.isEnabled = true;
       });
 
-      this.redis.on('error', (err) => {
-        console.warn('[CACHE] Redis error:', err.message);
+      this.redis.on('error', (err: Error) => {
+        console.warn('Redis error:', err.message);
         this.isEnabled = false;
       });
 
-      // Test connection
       await this.redis.ping();
       this.isEnabled = true;
     } catch (error) {
-      console.warn('[CACHE] Redis not available, running without cache');
+      console.warn('Redis not available, running without cache');
       this.isEnabled = false;
       this.redis = null;
     }
   }
 
-  /**
-   * Get data from cache
-   */
   async get<T>(key: string): Promise<T | null> {
     if (!this.isEnabled || !this.redis) return null;
 
@@ -86,9 +72,6 @@ class CacheService {
     }
   }
 
-  /**
-   * Set data in cache
-   */
   async set<T>(key: string, data: T, ttl?: number): Promise<void> {
     if (!this.isEnabled || !this.redis) return;
 
@@ -99,9 +82,6 @@ class CacheService {
     }
   }
 
-  /**
-   * Delete specific key from cache
-   */
   async invalidate(key: string): Promise<void> {
     if (!this.isEnabled || !this.redis) return;
 
@@ -111,9 +91,6 @@ class CacheService {
     }
   }
 
-  /**
-   * Delete keys matching pattern
-   */
   async invalidatePattern(pattern: string): Promise<void> {
     if (!this.isEnabled || !this.redis) return;
 
@@ -126,9 +103,6 @@ class CacheService {
     }
   }
 
-  /**
-   * Clear all cache
-   */
   async clearAll(): Promise<void> {
     if (!this.isEnabled || !this.redis) return;
 
@@ -138,23 +112,14 @@ class CacheService {
     }
   }
 
-  /**
-   * Get TTL for specific data type
-   */
-  getTTL(type: 'PLAYERS' | 'GAMES' | 'STATS' | 'TOP_PLAYERS' | 'VIDEOS' | 'TEAMS'): number {
+  getTTL(type: 'PLAYERS' | 'GAMES' | 'STATS' | 'TOP_PLAYERS' | 'VIDEOS' | 'TEAMS' | 'SEASONS'): number {
     return this.TTL[type];
   }
 
-  /**
-   * Check if cache is enabled
-   */
   isReady(): boolean {
     return this.isEnabled;
   }
 
-  /**
-   * Close Redis connection
-   */
   async disconnect(): Promise<void> {
     if (this.redis) {
       await this.redis.quit();
@@ -162,35 +127,31 @@ class CacheService {
   }
 }
 
-// Export singleton instance
 export const cacheService = new CacheService();
 
-// Cache key generators for consistency
 export const CacheKeys = {
-  // Players
   allPlayers: () => 'players:all',
   activePlayers: () => 'players:active',
   player: (id: string) => `player:${id}`,
 
-  // Games
   allGames: () => 'games:all',
   game: (id: string) => `game:${id}`,
 
-  // Player Stats
   playerStats: (playerId: string) => `stats:player:${playerId}`,
   gameStats: (gameId: string) => `stats:game:${gameId}`,
   bulkPlayerStats: (playerIds: string[]) => `stats:bulk:${playerIds.sort().join(',')}`,
   topPlayers: (daysBack: number) => `stats:topPlayers:${daysBack}`,
 
-  // Videos
   videos: (gameId: string) => `videos:game:${gameId}`,
   playerVideos: (playerId: string) => `videos:player:${playerId}`,
 
-  // Teams
   gameTeams: (gameId: string) => `teams:game:${gameId}`,
   team: (id: string) => `team:${id}`,
 
-  // Team Stats
   gameTeamStats: (gameId: string) => `teamStats:game:${gameId}`,
   teamStats: (id: string) => `teamStats:${id}`,
+
+  allSeasons: () => 'seasons:all',
+  activeSeason: () => 'seasons:active',
+  season: (id: string) => `season:${id}`,
 };

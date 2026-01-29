@@ -27,13 +27,11 @@ export const ChangePasswordPage = () => {
     setError('');
     setSuccess('');
 
-    // Validate new password length
     if (newPassword.length < 6) {
       setError('Yeni şifre en az 6 karakter uzunluğunda olmalıdır');
       return;
     }
 
-    // Validate password confirmation
     if (newPassword !== confirmPassword) {
       setError('Yeni şifreler eşleşmiyor');
       return;
@@ -47,15 +45,12 @@ export const ChangePasswordPage = () => {
       setIsLoading(false);
       setSuccess('Şifreniz başarıyla değiştirildi! Ana sayfaya yönlendiriliyorsunuz...');
 
-      // Wait 2 seconds to show success message before redirecting
       setTimeout(() => {
         navigate('/', { replace: true });
       }, 2000);
     } catch (err: any) {
-      console.error('Password change error caught:', err);
       setIsLoading(false);
 
-      // Extract error message
       let errorMessage = 'Şifre değiştirme işlemi başarısız oldu';
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -64,7 +59,6 @@ export const ChangePasswordPage = () => {
       }
 
       setError(errorMessage);
-      // DO NOT NAVIGATE ON ERROR - Stay on the page
     }
   };
 
@@ -72,7 +66,6 @@ export const ChangePasswordPage = () => {
     <div className={`min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black`}>
       <div className="max-w-md w-full">
         <div className={`rounded-2xl shadow-2xl p-8 bg-gray-800/50 backdrop-blur-md border border-orange-500/20`}>
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
               <span className="text-4xl">🔐</span>
@@ -81,7 +74,6 @@ export const ChangePasswordPage = () => {
             <p className="text-gray-300">Güvenliğiniz için varsayılan şifrenizi değiştirin</p>
           </div>
 
-          {/* Success Message */}
           {success && (
             <div className={`border-2 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 bg-green-500/20 border-green-500 text-green-200`}>
               <span className="text-2xl">✓</span>
@@ -89,7 +81,6 @@ export const ChangePasswordPage = () => {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className={`border-2 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 bg-red-500/20 border-red-500 text-red-200`}>
               <span className="text-2xl">⚠️</span>
@@ -98,7 +89,6 @@ export const ChangePasswordPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* New Password */}
             <div>
               <label className={`block text-sm font-semibold mb-2 text-gray-300`} htmlFor="newPassword">
                 Yeni Şifre <span className="text-red-500">*</span>
@@ -137,7 +127,6 @@ export const ChangePasswordPage = () => {
               </p>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className={`block text-sm font-semibold mb-2 text-gray-300`} htmlFor="confirmPassword">
                 Yeni Şifre (Tekrar) <span className="text-red-500">*</span>
@@ -172,7 +161,6 @@ export const ChangePasswordPage = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading || success !== ''}
@@ -200,7 +188,6 @@ export const ChangePasswordPage = () => {
             </button>
           </form>
 
-          {/* Back to Home Link */}
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/')}

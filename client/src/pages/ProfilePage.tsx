@@ -80,8 +80,6 @@ export const ProfilePage = () => {
       sessionStorage.setItem('user', JSON.stringify(updatedUser));
 
       setSuccess('Profiliniz başarıyla güncellendi!');
-
-      // Reload the page to reflect changes
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -250,7 +248,6 @@ export const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Badge Selector */}
             <div className="pt-6 border-t border-gray-200">
               <BadgeSelector
                 selectedBadges={formData.badges}

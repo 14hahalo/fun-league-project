@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayers } from '../hooks/usePlayers';
+import { useSeasons } from '../hooks/useSeasons';
 import { useGames } from '../hooks/useGames';
 import { useMatchStats } from '../hooks/useMatchStats';
 import { PlayerFormModal } from '../components/admin/PlayerFormModal';
 import { PlayerList } from '../components/admin/PlayerList';
+import { SeasonFormModal } from '../components/admin/SeasonFormModal';
+import { SeasonList } from '../components/admin/SeasonList';
 import { AddMatchStatsModal } from '../components/admin/AddMatchStatsModal';
 import { EditMatchStatsModal } from '../components/admin/EditMatchStatsModal';
 import { SetPasswordModal } from '../components/admin/SetPasswordModal';
@@ -12,16 +15,20 @@ import { BuildTeamsModal } from '../components/admin/BuildTeamsModal';
 import { Loading } from '../components/shared/Loading';
 import { playerApi } from '../api/playerApi';
 import type { CreatePlayerDto, UpdatePlayerDto, Player } from '../types/player.types';
+import type { CreateSeasonDto, UpdateSeasonDto, Season } from '../types/season.types';
 import type { MatchStatsData } from '../components/admin/AddMatchStatsModal';
 import type { EditMatchStatsData } from '../components/admin/EditMatchStatsModal';
 
 export const AdminPage = () => {
   const navigate = useNavigate();
   const { players, loading, error, createPlayer, updatePlayer, deletePlayer, togglePlayerStatus } = usePlayers();
+  const { seasons, loading: seasonsLoading, createSeason, updateSeason, deleteSeason } = useSeasons();
   const { games, loading: gamesLoading, refetch: refetchGames, deleteGame } = useGames();
   const { createMatchStats, updateMatchStats, loading: matchStatsLoading, error: matchStatsError } = useMatchStats();
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [showSeasonModal, setShowSeasonModal] = useState(false);
+  const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [showMatchStatsModal, setShowMatchStatsModal] = useState(false);
   const [editingGameId, setEditingGameId] = useState<string | null>(null);
   const [settingPasswordFor, setSettingPasswordFor] = useState<Player | null>(null);
@@ -58,6 +65,33 @@ export const AdminPage = () => {
   const handleClosePlayerModal = () => {
     setEditingPlayer(null);
     setShowPlayerModal(false);
+  };
+
+  const handleCreateSeason = async (data: CreateSeasonDto | UpdateSeasonDto) => {
+    await createSeason(data as CreateSeasonDto);
+    setShowSeasonModal(false);
+  };
+
+  const handleEditSeason = (season: Season) => {
+    setEditingSeason(season);
+    setShowSeasonModal(true);
+  };
+
+  const handleUpdateSeason = async (data: UpdateSeasonDto) => {
+    if (editingSeason) {
+      await updateSeason(editingSeason.id, data);
+      setEditingSeason(null);
+      setShowSeasonModal(false);
+    }
+  };
+
+  const handleDeleteSeason = async (id: string) => {
+    await deleteSeason(id);
+  };
+
+  const handleCloseSeasonModal = () => {
+    setEditingSeason(null);
+    setShowSeasonModal(false);
   };
 
   const handleCreateMatchStats = async (matchData: MatchStatsData) => {
@@ -110,7 +144,7 @@ export const AdminPage = () => {
     }
   };
 
-  if (loading || gamesLoading) return <Loading />;
+  if (loading || gamesLoading || seasonsLoading) return <Loading />;
 
   return (
     <div className="space-y-8">
@@ -153,7 +187,33 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* Player Form Modal */}
+      <section>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Sezonlar</h2>
+          <button
+            onClick={() => {
+              setEditingSeason(null);
+              setShowSeasonModal(true);
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            + Yeni Sezon Ekle
+          </button>
+        </div>
+        <SeasonList
+          seasons={seasons}
+          onEdit={handleEditSeason}
+          onDelete={handleDeleteSeason}
+        />
+      </section>
+
+      <SeasonFormModal
+        isOpen={showSeasonModal}
+        onClose={handleCloseSeasonModal}
+        season={editingSeason || undefined}
+        onSubmit={editingSeason ? handleUpdateSeason : handleCreateSeason}
+      />
+
       <PlayerFormModal
         isOpen={showPlayerModal}
         onClose={handleClosePlayerModal}
@@ -197,7 +257,6 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* Matches Section */}
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">Maçlar</h2>
@@ -213,7 +272,6 @@ export const AdminPage = () => {
                 key={game.id}
                 className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
               >
-                {/* Header */}
                 <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">
@@ -225,7 +283,6 @@ export const AdminPage = () => {
                   </div>
                 </div>
 
-                {/* Scores */}
                 <div className="p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 text-center">
@@ -245,7 +302,6 @@ export const AdminPage = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
                   <div className="flex gap-2">
                     <button
@@ -268,10 +324,8 @@ export const AdminPage = () => {
         )}
       </section>
 
-      {/* Divider */}
       <div className="border-t-2 border-gray-200"></div>
 
-      {/* Player Stats Management Link */}
       <section>
         <div
           onClick={() => navigate('/admin/player-stats')}
@@ -291,10 +345,8 @@ export const AdminPage = () => {
         </div>
       </section>
 
-      {/* Divider */}
       <div className="border-t-2 border-gray-200"></div>
 
-      {/* Players Section */}
       <section>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Oyuncular</h2>
         <PlayerList

@@ -8,7 +8,7 @@ export const requireRole = (...allowedRoles: PlayerRole[]) => {
     if (!userRole) {
       res.status(401).json({
         success: false,
-        message: 'Unauthorized - No role found',
+        message: 'Yetkiniz yok - No role found',
       });
       return;
     }
@@ -16,7 +16,7 @@ export const requireRole = (...allowedRoles: PlayerRole[]) => {
     if (!allowedRoles.includes(userRole)) {
       res.status(403).json({
         success: false,
-        message: 'Forbidden - Insufficient permissions',
+        message: 'Yetersiz yetki',
       });
       return;
     }
@@ -24,6 +24,4 @@ export const requireRole = (...allowedRoles: PlayerRole[]) => {
     next();
   };
 };
-
-// Convenience middleware for admin-only routes
 export const requireAdmin = requireRole(PlayerRole.ADMIN);

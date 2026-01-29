@@ -8,7 +8,6 @@ import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { BadgeSelector } from '../shared/BadgeSelector';
 
-// Zod validation schema
 const playerSchema = z.object({
   nickname: z.string().min(2, 'Takma ad en az 2 karakter olmalıdır'),
   firstName: z.string().optional(),
@@ -24,7 +23,7 @@ const playerSchema = z.object({
 type PlayerFormData = z.infer<typeof playerSchema>;
 
 interface PlayerFormProps {
-  player?: Player; // If provided, form is in edit mode
+  player?: Player; 
   onSubmit: (data: CreatePlayerDto | UpdatePlayerDto) => Promise<void>;
   onCancel?: () => void;
 }
@@ -59,7 +58,6 @@ export const PlayerForm = ({ player, onSubmit, onCancel }: PlayerFormProps) => {
 
   const handleFormSubmit = async (data: PlayerFormData) => {
     try {
-      // Boş stringleri undefined'a çevir
       const cleanedData: CreatePlayerDto | UpdatePlayerDto = {
         nickname: data.nickname,
         photoUrl: data.photoUrl || undefined,
@@ -79,7 +77,6 @@ export const PlayerForm = ({ player, onSubmit, onCancel }: PlayerFormProps) => {
         setBadges({});
       }
     } catch (error: any) {
-      // Backend'den gelen hataları göster
       if (error.response?.data?.errors) {
         error.response.data.errors.forEach((err: any) => {
           setError(err.field as any, {
@@ -102,7 +99,6 @@ export const PlayerForm = ({ player, onSubmit, onCancel }: PlayerFormProps) => {
         {isEditMode ? 'Oyuncu Düzenle' : 'Yeni Oyuncu Ekle'}
       </h2>
 
-      {/* Root hata mesajı */}
       {errors.root && (
         <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           {errors.root.message}
@@ -241,7 +237,6 @@ export const PlayerForm = ({ player, onSubmit, onCancel }: PlayerFormProps) => {
         )}
       </div>
 
-      {/* Badge Selector */}
       <div className="mt-6 pt-6 border-t border-gray-200">
         <BadgeSelector
           selectedBadges={badges}

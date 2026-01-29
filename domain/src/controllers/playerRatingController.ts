@@ -3,10 +3,7 @@ import { playerRatingService } from "../services/playerRatingService";
 import { CreatePlayerRatingDTO } from "../dtos/PlayerRating/CreatePlayerRatingDTO";
 
 export const playerRatingController = {
-  /**
-   * POST /api/player-ratings
-   * Submit or update a rating
-   */
+
   async submitRating(req: Request, res: Response) {
     try {
       const ratingData: CreatePlayerRatingDTO = req.body;
@@ -25,7 +22,7 @@ export const playerRatingController = {
 
   /**
    * GET /api/player-ratings/game/:gameId
-   * Get all ratings for a game with averages and MVP
+   * Bir oyun için ortalamalar ve MVP ile birlikte tüm değerlendirmeleri getir
    */
   async getGameRatings(req: Request, res: Response) {
     try {
@@ -45,7 +42,7 @@ export const playerRatingController = {
 
   /**
    * GET /api/player-ratings/game/:gameId/voter/:voterId
-   * Get ratings submitted by a voter for a specific game
+   * Belirli bir oyun için bir oy veren tarafından gönderilen değerlendirmeleri getir
    */
   async getVoterRatings(req: Request, res: Response) {
     try {
@@ -68,7 +65,7 @@ export const playerRatingController = {
 
   /**
    * GET /api/player-ratings/game/:gameId/player/:playerId
-   * Get ratings received by a player for a specific game
+   * Belirli bir oyun için bir oyuncunun aldığı değerlendirmeleri getir
    */
   async getPlayerRatings(req: Request, res: Response) {
     try {

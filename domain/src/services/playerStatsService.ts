@@ -9,7 +9,6 @@ import { cacheService, CacheKeys } from "./cacheService";
 export class PlayerStatsService {
   private static collection = db.collection("playerStats");
 
-  // Helper: Calculate percentages and totals
   private static calculateStats(data: {
     twoPointAttempts: number;
     twoPointMade: number;
@@ -39,7 +38,6 @@ export class PlayerStatsService {
     };
   }
 
-  // Create player stats
   static async createPlayerStats(
     data: CreatePlayerStatsDto
   ): Promise<PlayerStats> {
@@ -65,7 +63,6 @@ export class PlayerStatsService {
         updatedAt: savedData.updatedAt?.toDate() || new Date(),
       };
 
-      // Invalidate related caches
       await cacheService.invalidatePattern('stats:');
       await cacheService.invalidate(CacheKeys.playerStats(data.playerId));
       await cacheService.invalidate(CacheKeys.gameStats(data.gameId));
@@ -76,7 +73,6 @@ export class PlayerStatsService {
     }
   }
 
-  // Get player stats by ID
   static async getPlayerStatsById(id: string): Promise<PlayerStats> {
     try {
       const doc = await this.collection.doc(id).get();
@@ -98,15 +94,12 @@ export class PlayerStatsService {
     }
   }
 
-  // Get all player stats for a game
   static async getPlayerStatsByGameId(gameId: string): Promise<PlayerStats[]> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.gameStats(gameId);
       const cached = await cacheService.get<PlayerStats[]>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const snapshot = await this.collection
         .where("gameId", "==", gameId)
         .get();
@@ -121,7 +114,6 @@ export class PlayerStatsService {
         } as PlayerStats;
       });
 
-      // Cache the result
       await cacheService.set(cacheKey, stats, cacheService.getTTL('STATS'));
 
       return stats;
@@ -130,7 +122,6 @@ export class PlayerStatsService {
     }
   }
 
-  // Get stats for a specific player in a specific game
   static async getPlayerStatsForGame(
     gameId: string,
     playerId: string
@@ -160,7 +151,6 @@ export class PlayerStatsService {
     }
   }
 
-  // Update player stats
   static async updatePlayerStats(
     id: string,
     data: UpdatePlayerStatsDto
@@ -203,7 +193,6 @@ export class PlayerStatsService {
         updatedAt: updatedData.updatedAt?.toDate() || new Date(),
       } as PlayerStats;
 
-      // Invalidate related caches
       await cacheService.invalidatePattern('stats:');
       await cacheService.invalidate(CacheKeys.playerStats(currentData.playerId));
       await cacheService.invalidate(CacheKeys.gameStats(currentData.gameId));
@@ -215,7 +204,6 @@ export class PlayerStatsService {
     }
   }
 
-  // Delete player stats
   static async deletePlayerStats(id: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -228,7 +216,6 @@ export class PlayerStatsService {
       const data = doc.data() as PlayerStats;
       await docRef.delete();
 
-      // Invalidate related caches
       await cacheService.invalidatePattern('stats:');
       if (data.playerId) {
         await cacheService.invalidate(CacheKeys.playerStats(data.playerId));
@@ -242,15 +229,12 @@ export class PlayerStatsService {
     }
   }
 
-  // Get all stats for a specific player across all games
   static async getAllStatsForPlayer(playerId: string): Promise<PlayerStats[]> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.playerStats(playerId);
       const cached = await cacheService.get<PlayerStats[]>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const snapshot = await this.collection
         .where("playerId", "==", playerId)
         .get();
@@ -265,7 +249,6 @@ export class PlayerStatsService {
         } as PlayerStats;
       });
 
-      // Cache the result
       await cacheService.set(cacheKey, stats, cacheService.getTTL('STATS'));
 
       return stats;
@@ -274,18 +257,15 @@ export class PlayerStatsService {
     }
   }
 
-  // Get stats for multiple players at once (BULK ENDPOINT for performance)
   static async getBulkPlayerStats(playerIds: string[]): Promise<Record<string, PlayerStats[]>> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.bulkPlayerStats(playerIds);
       const cached = await cacheService.get<Record<string, PlayerStats[]>>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const result: Record<string, PlayerStats[]> = {};
 
-      // Firestore has a limit of 10 items in 'in' queries, so we need to batch
+      // Firestore'da 'in' sorgularında 10 öğe sınırı var, bu yüzden gruplamamız gerekiyor
       const batchSize = 10;
 
       for (let i = 0; i < playerIds.length; i += batchSize) {
@@ -311,7 +291,6 @@ export class PlayerStatsService {
         });
       }
 
-      // Cache the result
       await cacheService.set(cacheKey, result, cacheService.getTTL('STATS'));
 
       return result;
@@ -320,7 +299,6 @@ export class PlayerStatsService {
     }
   }
 
-  // Helper method to calculate top players from a list of game IDs
   private static async calculateTopPlayersFromGames(gameIds: string[], cacheKey: string) {
     if (gameIds.length === 0) {
       return {
@@ -330,9 +308,6 @@ export class PlayerStatsService {
         mostAssists: null,
       };
     }
-
-    // Get all player stats for these games
-    // Note: Firestore has a limit of 10 items in 'in' queries, so we need to batch
     const allStats: PlayerStats[] = [];
     const batchSize = 10;
 
@@ -353,7 +328,6 @@ export class PlayerStatsService {
       });
     }
 
-    // Aggregate stats by player
     const playerAggregates = new Map<string, {
       playerId: string;
       totalPoints: number;
@@ -392,15 +366,12 @@ export class PlayerStatsService {
       });
     });
 
-    // Find top performers
     const aggregatesArray = Array.from(playerAggregates.values());
 
-    // Top scorer - most total points
     const topScorer = aggregatesArray.reduce((prev, current) =>
       current.totalPoints > prev.totalPoints ? current : prev
     , aggregatesArray[0]);
 
-    // Best shooter - highest overall shooting percentage (minimum 10 attempts)
     const eligibleShooters = aggregatesArray.filter(p =>
       (p.twoPointAttempts + p.threePointAttempts) >= 10
     );
@@ -412,12 +383,10 @@ export class PlayerStatsService {
         })
       : null;
 
-    // Most rebounds
     const mostRebounds = aggregatesArray.reduce((prev, current) =>
       current.totalRebounds > prev.totalRebounds ? current : prev
     , aggregatesArray[0]);
 
-    // Most assists
     const mostAssists = aggregatesArray.reduce((prev, current) =>
       current.totalAssists > prev.totalAssists ? current : prev
     , aggregatesArray[0]);
@@ -427,34 +396,28 @@ export class PlayerStatsService {
       bestShooter,
       mostRebounds,
       mostAssists,
-      allPlayerAggregates: aggregatesArray, // Include all player aggregates for efficiency ranking
+      allPlayerAggregates: aggregatesArray, 
     };
 
-    // Cache the result (shorter TTL for top players as it changes more frequently)
     await cacheService.set(cacheKey, topPlayersData, cacheService.getTTL('TOP_PLAYERS'));
 
     return topPlayersData;
   }
 
-  // Get top players by various stats
   static async getTopPlayers(daysBack: number = 30, endDate?: Date) {
     try {
-      // Check cache first
       const cacheKey = endDate
         ? `${CacheKeys.topPlayers(daysBack)}:${endDate.toISOString()}`
         : CacheKeys.topPlayers(daysBack);
       const cached = await cacheService.get(cacheKey);
       if (cached) return cached;
 
-      // Calculate the date threshold
       const dateThreshold = new Date();
       dateThreshold.setDate(dateThreshold.getDate() - daysBack);
 
-      // Get all player stats from recent games
       const gamesCollection = db.collection("games");
       let query = gamesCollection.where("date", ">=", dateThreshold);
 
-      // If endDate is provided, filter games up to that date
       if (endDate) {
         const recentGames = await query.get();
         const filteredGames = recentGames.docs.filter(doc => {

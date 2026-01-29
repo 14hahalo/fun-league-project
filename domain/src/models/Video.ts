@@ -4,7 +4,7 @@ export interface Video {
   title: string;
   description?: string;
   youtubeUrl: string;
-  playerIds: string[]; // Array of player IDs tagged in this video
+  playerIds: string[]; 
   createdAt: Date;
   updatedAt: Date;
 }

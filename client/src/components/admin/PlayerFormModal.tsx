@@ -8,7 +8,6 @@ import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { BadgeSelector } from '../shared/BadgeSelector';
 
-// Zod validation schema
 const playerSchema = z.object({
   nickname: z.string().min(2, 'Takma ad en az 2 karakter olmalıdır'),
   firstName: z.string().optional(),
@@ -26,7 +25,7 @@ type PlayerFormData = z.infer<typeof playerSchema>;
 interface PlayerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  player?: Player; // If provided, form is in edit mode
+  player?: Player; 
   onSubmit: (data: CreatePlayerDto | UpdatePlayerDto) => Promise<void>;
 }
 
@@ -58,7 +57,6 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
 
   const photoUrl = watch('photoUrl');
 
-  // Reset form when player changes or modal opens
   useEffect(() => {
     if (isOpen) {
       if (player) {
@@ -93,7 +91,6 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
 
   const handleFormSubmit = async (data: PlayerFormData) => {
     try {
-      // Boş stringleri undefined'a çevir
       const cleanedData: CreatePlayerDto | UpdatePlayerDto = {
         nickname: data.nickname,
         photoUrl: data.photoUrl || undefined,
@@ -113,9 +110,8 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
         setBadges({});
       }
       onClose();
-    } catch (error: any) {
-      // Backend'den gelen hataları göster
-      if (error.response?.data?.errors) {
+    } catch (error: any)
+    {      if (error.response?.data?.errors) {
         error.response.data.errors.forEach((err: any) => {
           setError(err.field as any, {
             type: 'manual',
@@ -136,7 +132,6 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
           <h2 className="text-2xl font-bold text-white">
             {isEditMode ? '✏️ Oyuncu Düzenle' : '➕ Yeni Oyuncu Ekle'}
@@ -151,9 +146,7 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
           </button>
         </div>
 
-        {/* Form Content */}
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6">
-          {/* Root hata mesajı */}
           {errors.root && (
             <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {errors.root.message}
@@ -292,7 +285,6 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
             )}
           </div>
 
-          {/* Badge Selector */}
           <div className="mt-6 pt-6 border-t border-gray-200 bg-gray-800 rounded-xl p-4">
             <BadgeSelector
               selectedBadges={badges}
@@ -300,7 +292,6 @@ export const PlayerFormModal = ({ isOpen, onClose, player, onSubmit }: PlayerFor
             />
           </div>
 
-          {/* Footer Buttons */}
           <div className="flex gap-4 mt-6 pt-4 border-t border-gray-200">
             <Button type="button" variant="secondary" onClick={onClose} fullWidth disabled={isSubmitting}>
               İptal

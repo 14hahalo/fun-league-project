@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 export const Footer = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Show/hide scroll to top button based on scroll position
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
@@ -22,7 +21,6 @@ export const Footer = () => {
 
   return (
     <>
-      {/* Scroll to Top Button */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -50,7 +48,7 @@ export const Footer = () => {
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="text-sm text-gray-400">
-                © 2025 enBallerZ Basketbol. Tüm hakları saklıdır.
+                © 2026 enBallerZ Basketbol. Tüm hakları saklıdır.
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <span className="flex items-center space-x-2">

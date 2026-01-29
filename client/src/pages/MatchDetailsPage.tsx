@@ -7,8 +7,10 @@ import { videoApi } from '../api/basketballApi';
 import type { TeamStats, Video } from '../types/basketball.types';
 import { PlayerRatingModal } from '../components/visitor/PlayerRatingModal';
 import { PlayerRatingsListModal } from '../components/visitor/PlayerRatingsListModal';
+import { PlayerDetailsModal } from '../components/visitor/PlayerDetailsModal';
 import { useRatings } from '../hooks/useRatings';
 import ReactMarkdown from 'react-markdown';
+import type { Player } from '../types/player.types';
 
 interface AwardWinner {
   player: PlayerStatsWithInfo;
@@ -20,11 +22,12 @@ export const MatchDetailsPage = () => {
   const navigate = useNavigate();
   const { matchDetails, loading, error, fetchMatchDetails } = useMatchDetails();
   const { gameRatings, fetchGameRatings } = useRatings();
-  const [showTeamB, setShowTeamB] = useState(false); // false = Team A, true = Team B
+  const [showTeamB, setShowTeamB] = useState(false); 
   const [videos, setVideos] = useState<Video[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [isRatingsListModalOpen, setIsRatingsListModalOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   useEffect(() => {
     if (gameId) {
@@ -135,7 +138,7 @@ export const MatchDetailsPage = () => {
             </h3>
             <div className="bg-black/30 backdrop-blur-sm rounded-xl p-4 mb-3 border border-white/20">
               <p className="text-white text-2xl font-black drop-shadow-lg">
-                {winner.player.player?.nickname || 'Unknown'}
+                {winner.player.player?.nickname || 'Bilinmiyor'}
               </p>
               {winner.player.player?.jerseyNumber && (
                 <p className="text-white text-base opacity-90 mt-1 font-bold">
@@ -225,9 +228,12 @@ export const MatchDetailsPage = () => {
                       <div className="flex items-center gap-1 md:gap-3">
                         {index === 0 && <span className="text-lg md:text-2xl drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] animate-pulse">👑</span>}
                         <div className="truncate min-w-0">
-                          <div className={`font-black text-xs md:text-base truncate ${index === 0 ? 'text-yellow-300' : 'text-gray-200'}`}>
-                            #{stat.player?.jerseyNumber} {stat.player?.nickname || 'Unknown'}
-                          </div>
+                          <button
+                            onClick={() => stat.player && setSelectedPlayer(stat.player)}
+                            className={`font-black text-xs md:text-base truncate hover:underline cursor-pointer transition-colors ${index === 0 ? 'text-yellow-300 hover:text-yellow-200' : 'text-gray-200 hover:text-orange-400'}`}
+                          >
+                            #{stat.player?.jerseyNumber} {stat.player?.nickname || 'Bilinmiyor'}
+                          </button>
                         </div>
                       </div>
                     </td>
@@ -300,7 +306,6 @@ export const MatchDetailsPage = () => {
                   </tr>
                 ))}
 
-                {/* Team Subtotal Row */}
                 {teamStats && (
                   <tr className="bg-gradient-to-r from-orange-600/40 via-orange-500/40 to-orange-600/40 border-t-4 border-orange-400">
                     <td className="w-48 px-2 md:px-4 py-3 md:py-5" colSpan={2}>
@@ -399,7 +404,6 @@ export const MatchDetailsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
         <div className="mb-8">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 rounded-3xl blur opacity-40 group-hover:opacity-60 transition duration-300"></div>
@@ -411,7 +415,6 @@ export const MatchDetailsPage = () => {
                 </h1>
               </div>
 
-              {/* Score Display */}
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-red-500/10 rounded-2xl blur-xl"></div>
                 <div className="relative bg-black/40 backdrop-blur-md rounded-2xl p-4 md:p-8 border border-orange-500/20">
@@ -456,7 +459,6 @@ export const MatchDetailsPage = () => {
           </div>
         </div>
 
-        {/* Award Cards */}
         {awards && (
           <div className="mb-12">
             <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-500 mb-10 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
@@ -495,7 +497,6 @@ export const MatchDetailsPage = () => {
           </div>
         )}
 
-        {/* Fan Ratings MVP */}
         {gameRatings && (
           <div className="mb-12">
             <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-red-400 to-orange-400 mb-10 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
@@ -573,7 +574,6 @@ export const MatchDetailsPage = () => {
           </div>
         )}
 
-        {/* Rating Button */}
         <div className="mb-12 flex justify-center">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-300"></div>
@@ -588,7 +588,6 @@ export const MatchDetailsPage = () => {
           </div>
         </div>
 
-        {/* Team Selection Toggle */}
         <div className="mb-8 flex items-center justify-center gap-6">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -621,14 +620,12 @@ export const MatchDetailsPage = () => {
           </div>
         </div>
 
-        {/* Player Stats */}
         <div className="mb-8">
           {!showTeamB
             ? renderPlayerStats(teamAPlayers, teamAStats, 'Team A', '🔵')
             : renderPlayerStats(teamBPlayers, teamBStats, 'Team B', '🔴')}
         </div>
 
-        {/* Videos */}
         <div className="mb-8">
           {videosLoading ? (
             <div className="py-12">
@@ -643,7 +640,6 @@ export const MatchDetailsPage = () => {
           )}
         </div>
 
-        {/* AI Analysis */}
         {game.aiAnalysis && (
           <div className="mb-8 relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -657,42 +653,42 @@ export const MatchDetailsPage = () => {
               <div className="prose prose-invert prose-lg max-w-none">
                 <ReactMarkdown
                   components={{
-                    h1: ({ children }) => (
+                    h1: ({ children }: any) => (
                       <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-4 mt-8">
                         {children}
                       </h1>
                     ),
-                    h2: ({ children }) => (
+                    h2: ({ children }: any) => (
                       <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 mb-3 mt-6">
                         {children}
                       </h2>
                     ),
-                    h3: ({ children }) => (
+                    h3: ({ children }: any) => (
                       <h3 className="text-xl font-semibold text-cyan-300 mb-2 mt-4">
                         {children}
                       </h3>
                     ),
-                    p: ({ children }) => (
+                    p: ({ children }: any) => (
                       <p className="text-gray-300 leading-relaxed mb-4">
                         {children}
                       </p>
                     ),
-                    ul: ({ children }) => (
+                    ul: ({ children }: any) => (
                       <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4">
                         {children}
                       </ul>
                     ),
-                    ol: ({ children }) => (
+                    ol: ({ children }: any) => (
                       <ol className="list-decimal list-inside text-gray-300 space-y-2 mb-4">
                         {children}
                       </ol>
                     ),
-                    li: ({ children }) => (
+                    li: ({ children }: any) => (
                       <li className="text-gray-300 ml-4">
                         {children}
                       </li>
                     ),
-                    strong: ({ children }) => (
+                    strong: ({ children }: any) => (
                       <strong className="text-orange-400 font-bold">
                         {children}
                       </strong>
@@ -711,7 +707,6 @@ export const MatchDetailsPage = () => {
           </div>
         )}
 
-        {/* Notes */}
         {game.notes && (
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -725,13 +720,11 @@ export const MatchDetailsPage = () => {
         )}
       </div>
 
-      {/* Rating Modal */}
       {gameId && (
         <PlayerRatingModal
           isOpen={isRatingModalOpen}
           onClose={() => {
             setIsRatingModalOpen(false);
-            // Refresh ratings after modal closes
             if (gameId) {
               fetchGameRatings(gameId);
             }
@@ -744,12 +737,18 @@ export const MatchDetailsPage = () => {
         />
       )}
 
-      {/* Ratings List Modal */}
       <PlayerRatingsListModal
         isOpen={isRatingsListModalOpen}
         onClose={() => setIsRatingsListModalOpen(false)}
         gameRatings={gameRatings}
       />
+
+      {selectedPlayer && (
+        <PlayerDetailsModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { AdminPage } from './pages/AdminPage';
 import { GameStatsPage } from './pages/GameStatsPage';
 import { MatchDetailsPage } from './pages/MatchDetailsPage';
 import { PlayersPage } from './pages/PlayersPage';
+import { StatisticsPage } from './pages/StatisticsPage';
 import { LoginPage } from './pages/LoginPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -20,17 +21,15 @@ function App() {
       <AuthProvider>
         <Layout>
           <Routes>
-            {/* Public routes */}
             <Route path="/" element={<VisitorPage />} />
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/players" element={<PlayersPage />} />
+            <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/game/:gameId/stats" element={<GameStatsPage />} />
             <Route path="/match/:gameId" element={<MatchDetailsPage />} />
 
-            {/* Auth routes */}
             <Route path="/login" element={<LoginPage />} />
 
-            {/* Protected routes - Authenticated users */}
             <Route
               path="/profile"
               element={
@@ -48,7 +47,6 @@ function App() {
               }
             />
 
-            {/* Protected routes - Admin only */}
             <Route
               path="/admin"
               element={

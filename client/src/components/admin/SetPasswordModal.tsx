@@ -18,7 +18,6 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
     e.preventDefault();
     setError('');
 
-    // Validation
     if (newPassword.length < 6) {
       setError('Şifre en az 6 karakter uzunluğunda olmalıdır');
       return;
@@ -43,7 +42,6 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Şifre Belirle</h2>
@@ -61,7 +59,6 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
             <span className="text-xl">⚠️</span>
@@ -69,9 +66,7 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* New Password */}
           <div>
             <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-700 mb-2">
               Yeni Şifre
@@ -106,7 +101,6 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
             <p className="text-xs text-gray-500 mt-1">En az 6 karakter</p>
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
               Şifre Tekrar
@@ -122,7 +116,6 @@ export const SetPasswordModal = ({ player, onClose, onSubmit }: SetPasswordModal
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"

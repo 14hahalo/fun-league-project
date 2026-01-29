@@ -1,4 +1,3 @@
-/* FIFA Player Card Styles - Scoped */
 .fifa-card-container {
   position: relative;
   min-height: auto;
@@ -10,7 +9,6 @@
   margin: 0 auto;
 }
 
-/* CARD BASE */
 .fifa-card-container .fifa-card {
   position: relative;
   color: #272520;
@@ -30,7 +28,6 @@
   opacity: 1;
 }
 
-/* Card Inner Content */
 .fifa-card-container .fifa-card-inner {
   position: absolute;
   top: 0;
@@ -93,7 +90,6 @@
   text-transform: uppercase;
 }
 
-/* Active Animations */
 .fifa-card-container .fifa-card.active .fifa-player-image {
   right: 0;
   opacity: 1;
@@ -130,7 +126,6 @@
   top: 0;
 }
 
-/* Info Section Styles */
 .fifa-card-container .fifa-player-info .fifa-rating-value {
   font-size: 58px;
   line-height: 1;
@@ -186,7 +181,6 @@
   background-repeat: no-repeat;
 }
 
-/* Stats Section */
 .fifa-card-container .fifa-card-bottom .fifa-stats {
   display: flex;
   width: 100%;

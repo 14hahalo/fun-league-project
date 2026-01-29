@@ -50,7 +50,6 @@ export const VideoUploadForm = ({
 
     onAddVideo(newVideo);
 
-    // Reset form
     setTitle('');
     setDescription('');
     setYoutubeUrl('');
@@ -60,11 +59,9 @@ export const VideoUploadForm = ({
 
   return (
     <div className="space-y-6">
-      {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
         <h3 className="text-xl font-bold text-gray-800 mb-4">🎥 Yeni Video Ekle</h3>
 
-        {/* Title */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Video Başlığı *
@@ -79,7 +76,6 @@ export const VideoUploadForm = ({
           />
         </div>
 
-        {/* YouTube URL */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             YouTube URL *
@@ -97,7 +93,6 @@ export const VideoUploadForm = ({
           </p>
         </div>
 
-        {/* Description */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Açıklama (Opsiyonel)
@@ -111,7 +106,6 @@ export const VideoUploadForm = ({
           />
         </div>
 
-        {/* Player Tags */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Oyuncu Etiketleri (Videoda hangi oyuncular var?)
@@ -137,7 +131,6 @@ export const VideoUploadForm = ({
           </p>
         </div>
 
-        {/* Preview Toggle */}
         {youtubeUrl && (
           <div>
             <button
@@ -150,7 +143,6 @@ export const VideoUploadForm = ({
           </div>
         )}
 
-        {/* Preview */}
         {showPreview && youtubeUrl && (
           <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
             <p className="text-sm font-semibold text-gray-700 mb-2">Önizleme:</p>
@@ -158,7 +150,6 @@ export const VideoUploadForm = ({
           </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
@@ -167,7 +158,6 @@ export const VideoUploadForm = ({
         </button>
       </form>
 
-      {/* Added Videos List */}
       {videos.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-gray-800 mb-4">

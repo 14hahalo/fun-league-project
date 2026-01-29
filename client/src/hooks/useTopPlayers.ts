@@ -38,13 +38,10 @@ export const useTopPlayers = (daysBack: number = 30) => {
         setLoading(true);
         setError(null);
 
-        // Fetch top players stats
         const data = await playerStatsApi.getTopPlayers(daysBack);
 
-        // Fetch all players to get their details
         const players = await playerApi.getAllPlayers();
 
-        // Helper function to enrich player data
         const enrichPlayerData = (statsData: any): TopPlayerStats | null => {
           if (!statsData) return null;
 
@@ -79,7 +76,6 @@ export const useTopPlayers = (daysBack: number = 30) => {
     };
 
     fetchTopPlayers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daysBack]);
 
   return { topPlayers, loading, error };

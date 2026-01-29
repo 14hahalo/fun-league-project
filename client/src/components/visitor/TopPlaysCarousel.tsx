@@ -10,7 +10,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to current video
   useEffect(() => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -40,9 +39,7 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
 
   return (
     <div className="relative w-full">
-      {/* Carousel Container */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-900/20 via-gray-900/40 to-black/60 backdrop-blur-md border-2 border-orange-500/30 shadow-2xl">
-        {/* Videos Container */}
         <div
           ref={scrollContainerRef}
           className="flex overflow-x-hidden scroll-smooth snap-x snap-mandatory"
@@ -55,7 +52,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
               style={{ scrollSnapAlign: 'center' }}
             >
               <div className="p-4 md:p-8">
-                {/* Video Title */}
                 <div className="mb-4 text-center">
                   <h3 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-orange-400 to-orange-500 mb-2">
                     {video.title}
@@ -67,7 +63,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
                   )}
                 </div>
 
-                {/* Video Player - Only show current video to optimize performance */}
                 <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl border-2 border-orange-500/50">
                   {index === currentIndex ? (
                     <YouTubePlayer
@@ -89,7 +84,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
           ))}
         </div>
 
-        {/* Navigation Arrows */}
         {videos.length > 1 && (
           <>
             <button
@@ -134,7 +128,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
           </>
         )}
 
-        {/* Dots Indicator */}
         {videos.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
             {videos.map((_, index) => (
@@ -153,7 +146,6 @@ export const TopPlaysCarousel = ({ videos }: TopPlaysCarouselProps) => {
         )}
       </div>
 
-      {/* Video Counter */}
       <div className="mt-4 text-center">
         <p className="text-gray-400 font-bold text-sm">
           {currentIndex + 1} / {videos.length}

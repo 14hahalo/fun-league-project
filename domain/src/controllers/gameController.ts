@@ -2,12 +2,9 @@ import { Request, Response } from "express";
 import { gameService } from "../services/gameService";
 import { CreateGameDto } from "../dtos/Game/CreateGameDto";
 import { UpdateGameDto } from "../dtos/Game/UpdateGameDto";
-import { GameStatus } from "../enums/GameStatus";
 
 export const gameController = {
-  /**
-   * Create a new game
-   */
+
   async createGame(req: Request, res: Response): Promise<void> {
     try {
       const gameData: CreateGameDto = {
@@ -20,21 +17,18 @@ export const gameController = {
       res.status(201).json({
         success: true,
         data: game,
-        message: "Game created successfully",
+        message: "Maç Başarı ile oluşturuldıuı",
       });
     } catch (error) {
-      console.error("Error creating game:", error);
+      console.error("Maç oluştururken hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to create game",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Maç oluşturma esnasında hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },
 
-  /**
-   * Get all games
-   */
   async getAllGames(_req: Request, res: Response): Promise<void> {
     try {
       const games = await gameService.getAllGames();
@@ -42,21 +36,18 @@ export const gameController = {
       res.status(200).json({
         success: true,
         data: games,
-        message: "Games retrieved successfully",
+        message: "Maç bilgileri çekildi",
       });
     } catch (error) {
-      console.error("Error getting games:", error);
+      console.error("Maç bilgileri çekilirken hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve games",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Maç bilgileri çekilirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },
 
-  /**
-   * Get game by ID
-   */
   async getGameById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -65,7 +56,7 @@ export const gameController = {
       if (!game) {
         res.status(404).json({
           success: false,
-          message: "Game not found",
+          message: "Maç bulunamadı",
         });
         return;
       }
@@ -73,21 +64,18 @@ export const gameController = {
       res.status(200).json({
         success: true,
         data: game,
-        message: "Game retrieved successfully",
+        message: "Maç bilgisi başarılıyla bulundu",
       });
     } catch (error) {
-      console.error("Error getting game:", error);
+      console.error("Maç bilgisi çekilirken hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve game",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Maç bilgisi çekilirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },
 
-  /**
-   * Update game
-   */
   async updateGame(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -102,21 +90,18 @@ export const gameController = {
       res.status(200).json({
         success: true,
         data: game,
-        message: "Game updated successfully",
+        message: "Maç bilgisi güncellendi",
       });
     } catch (error) {
-      console.error("Error updating game:", error);
+      console.error("Maç bilgisi güncellenirken hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to update game",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Maç bilgisi güncellenirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },
 
-  /**
-   * Delete game
-   */
   async deleteGame(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -124,53 +109,18 @@ export const gameController = {
 
       res.status(200).json({
         success: true,
-        message: "Game deleted successfully",
+        message: "Maç başarıyla silindi",
       });
     } catch (error) {
-      console.error("Error deleting game:", error);
+      console.error("Maç silinirken hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to delete game",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Maç silinirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },
 
-  /**
-   * Get games by status
-   */
-  async getGamesByStatus(req: Request, res: Response): Promise<void> {
-    try {
-      const { status } = req.params;
-
-      if (!Object.values(GameStatus).includes(status as GameStatus)) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid game status",
-        });
-        return;
-      }
-
-      const games = await gameService.getGamesByStatus(status as GameStatus);
-
-      res.status(200).json({
-        success: true,
-        data: games,
-        message: "Games retrieved successfully",
-      });
-    } catch (error) {
-      console.error("Error getting games by status:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve games",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  },
-
-  /**
-   * Generate AI analysis for a game
-   */
   async generateAnalysis(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -179,14 +129,14 @@ export const gameController = {
       res.status(200).json({
         success: true,
         data: game,
-        message: "AI analysis generated successfully",
+        message: "AI analizi başarıyla oluşturuldu",
       });
     } catch (error) {
-      console.error("Error generating AI analysis:", error);
+      console.error("AI Analizi oluşturulurken bir hata oluştu:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to generate AI analysis",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "AI Analizi oluşturulurken bir hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen Hata",
       });
     }
   },

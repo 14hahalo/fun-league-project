@@ -41,7 +41,6 @@ export const GameStatsPage: React.FC = () => {
     try {
       await createPlayerStats(data);
       setShowForm(false);
-      // Refetch to get updated data
       if (gameId) {
         await fetchAllGameData(gameId);
       }
@@ -71,7 +70,6 @@ export const GameStatsPage: React.FC = () => {
     }
   };
 
-  // Enrich player stats with player info
   const enrichedPlayerStats: PlayerStatsWithPlayerInfo[] = playerStats.map((stat) => {
     const player = players.find((p) => p.id === stat.playerId);
     return {
@@ -111,7 +109,6 @@ export const GameStatsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
-      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -141,10 +138,8 @@ export const GameStatsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Input Mode */}
       {viewMode === 'input' && (
         <div className="space-y-6">
-          {/* Add Stats Button */}
           {!showForm && (
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-4">
@@ -159,7 +154,6 @@ export const GameStatsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Stats Form */}
           {showForm && (
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
@@ -179,7 +173,6 @@ export const GameStatsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Team Tabs */}
           <div className="bg-white rounded-lg shadow">
             <div className="border-b border-gray-200">
               <div className="flex">
@@ -206,7 +199,6 @@ export const GameStatsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Player Stats Table */}
             <div className="p-6">
               {selectedTeam === TeamType.TEAM_A && teamAStats.length > 0 && (
                 <div className="overflow-x-auto">
@@ -278,12 +270,9 @@ export const GameStatsPage: React.FC = () => {
         </div>
       )}
 
-      {/* View Mode */}
       {viewMode === 'view' && (
         <div className="space-y-6">
-          {/* Team Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Team A */}
             <div>
               {teamATeamStats ? (
                 <TeamStatsDisplay stats={teamATeamStats} teamName={teamAInfo?.teamName} />
@@ -300,7 +289,6 @@ export const GameStatsPage: React.FC = () => {
               )}
             </div>
 
-            {/* Team B */}
             <div>
               {teamBTeamStats ? (
                 <TeamStatsDisplay stats={teamBTeamStats} teamName={teamBInfo?.teamName} />
@@ -318,9 +306,7 @@ export const GameStatsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Player Stats Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Team A Players */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="bg-blue-600 px-6 py-4">
                 <h3 className="text-xl font-bold text-white">
@@ -354,7 +340,6 @@ export const GameStatsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Team B Players */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="bg-red-600 px-6 py-4">
                 <h3 className="text-xl font-bold text-white">

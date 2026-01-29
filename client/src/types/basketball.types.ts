@@ -20,7 +20,6 @@ export interface PlayerStats {
   playerId: string;
   teamType: TeamType;
 
-  // Shooting Statistics
   twoPointAttempts: number;
   twoPointMade: number;
   twoPointPercentage: number;
@@ -29,12 +28,10 @@ export interface PlayerStats {
   threePointMade: number;
   threePointPercentage: number;
 
-  // Rebounds
   defensiveRebounds: number;
   offensiveRebounds: number;
   totalRebounds: number;
 
-  // Other Stats
   assists: number;
   totalPoints: number;
 
@@ -90,11 +87,11 @@ export interface Game {
   teamSize?: number;
   notes?: string;
   aiAnalysis?: string;
+  seasonId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// DTOs
 export interface CreatePlayerStatsDto {
   gameId: string;
   playerId: string;
@@ -130,14 +127,12 @@ export interface UpdateTeamDto {
   teamName?: string;
 }
 
-// Extended interfaces with player info
 export interface PlayerStatsWithPlayerInfo extends PlayerStats {
   playerNickname?: string;
   playerName?: string;
   playerJerseyNumber?: number;
 }
 
-// Video types
 export interface Video {
   id: string;
   gameId: string;

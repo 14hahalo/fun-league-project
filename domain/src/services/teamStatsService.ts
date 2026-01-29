@@ -8,7 +8,6 @@ import { PlayerStatsService } from "./playerStatsService";
 export class TeamStatsService {
   private static collection = db.collection("teamStats");
 
-  // Helper: Calculate team stats from player stats
   private static calculateTeamStats(playerStats: PlayerStats[]) {
     const totals = playerStats.reduce(
       (acc, stats) => ({
@@ -53,13 +52,11 @@ export class TeamStatsService {
     };
   }
 
-  // Generate or update team stats based on player stats
   static async generateTeamStats(
     gameId: string,
     teamType: "TEAM_A" | "TEAM_B"
   ): Promise<TeamStats> {
     try {
-      // Get all player stats for this team in this game
       const allPlayerStats = await PlayerStatsService.getPlayerStatsByGameId(
         gameId
       );
@@ -76,7 +73,6 @@ export class TeamStatsService {
 
       const calculatedStats = this.calculateTeamStats(teamPlayerStats);
 
-      // Check if team stats already exist
       const existingSnapshot = await this.collection
         .where("gameId", "==", gameId)
         .where("teamType", "==", teamType)
@@ -85,14 +81,12 @@ export class TeamStatsService {
 
       let docRef;
       if (!existingSnapshot.empty) {
-        // Update existing
         docRef = existingSnapshot.docs[0].ref;
         await docRef.update({
           ...calculatedStats,
           updatedAt: FieldValue.serverTimestamp(),
         });
       } else {
-        // Create new
         const newStatsData = {
           gameId,
           teamType,
@@ -120,7 +114,6 @@ export class TeamStatsService {
     }
   }
 
-  // Get team stats by ID
   static async getTeamStatsById(id: string): Promise<TeamStats> {
     try {
       const doc = await this.collection.doc(id).get();
@@ -142,7 +135,6 @@ export class TeamStatsService {
     }
   }
 
-  // Get team stats for a specific game
   static async getTeamStatsByGameId(gameId: string): Promise<TeamStats[]> {
     try {
       const snapshot = await this.collection
@@ -163,7 +155,6 @@ export class TeamStatsService {
     }
   }
 
-  // Get specific team stats for a game
   static async getTeamStatsForGame(
     gameId: string,
     teamType: "TEAM_A" | "TEAM_B"
@@ -193,7 +184,6 @@ export class TeamStatsService {
     }
   }
 
-  // Delete team stats
   static async deleteTeamStats(id: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -210,7 +200,6 @@ export class TeamStatsService {
     }
   }
 
-  // Recalculate team stats (useful after player stats update)
   static async recalculateTeamStats(
     gameId: string,
     teamType: "TEAM_A" | "TEAM_B"

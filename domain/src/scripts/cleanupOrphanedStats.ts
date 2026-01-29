@@ -1,4 +1,4 @@
-// Load environment variables first
+//Oyuncu,maç,sezon,stat bunlar hep birbirine IDler ile bağlı olduğu için, biri silindiğinde, bağlı olanlardan temizlenmesi gereken varsa temizlenmesi lazım
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -6,13 +6,13 @@ import { db } from '../config/firebase';
 
 async function cleanupOrphanedStats() {
   try {
-    // Get all games
+    // Bütün maçlar
     const gamesSnapshot = await db.collection('games').get();
     const validGameIds = new Set(gamesSnapshot.docs.map(doc => doc.id));
 
     let totalOrphaned = 0;
 
-    // 1. Check and remove orphaned player stats
+    // Bağlı oyuncu statı varsa sil
     const playerStatsSnapshot = await db.collection('playerStats').get();
     const orphanedPlayerStats = playerStatsSnapshot.docs.filter(
       doc => !validGameIds.has(doc.data().gameId)
@@ -26,7 +26,7 @@ async function cleanupOrphanedStats() {
     } else {
     }
 
-    // 2. Check and remove orphaned team stats
+    // Bağlı takım statı varsa sil
     const teamStatsSnapshot = await db.collection('teamStats').get();
     const orphanedTeamStats = teamStatsSnapshot.docs.filter(
       doc => !validGameIds.has(doc.data().gameId)
@@ -40,7 +40,7 @@ async function cleanupOrphanedStats() {
     } else {
     }
 
-    // 3. Check and remove orphaned teams
+    // Bağlı takım varsa sil
     const teamsSnapshot = await db.collection('teams').get();
     const orphanedTeams = teamsSnapshot.docs.filter(
       doc => !validGameIds.has(doc.data().gameId)
@@ -54,7 +54,7 @@ async function cleanupOrphanedStats() {
     } else {
     }
 
-    // 4. Check and remove orphaned videos
+    // Bağlı videolar varsa sil
     const videosSnapshot = await db.collection('videos').get();
     const orphanedVideos = videosSnapshot.docs.filter(
       doc => !validGameIds.has(doc.data().gameId)

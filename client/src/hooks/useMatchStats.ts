@@ -12,16 +12,15 @@ export const useMatchStats = () => {
     setError(null);
 
     try {
-      // Step 1: Create the game
       const game = await gameApi.createGame({
         gameNumber: matchData.metadata.gameNumber,
         date: matchData.metadata.date,
         status: 'COMPLETED',
         teamSize: matchData.metadata.teamSize,
         notes: matchData.metadata.notes,
+        seasonId: matchData.metadata.seasonId,
       });
 
-      // Step 2: Create teams
       const teamA = await teamApi.createTeam({
         gameId: game.id,
         teamType: 'TEAM_A',
@@ -36,7 +35,6 @@ export const useMatchStats = () => {
         teamName: 'Team B',
       });
 
-      // Step 3: Create player stats for all players
       const playerStatsPromises = matchData.playerStats.map((playerStat) =>
         playerStatsApi.createPlayerStats({
           gameId: game.id,
@@ -54,11 +52,9 @@ export const useMatchStats = () => {
 
       await Promise.all(playerStatsPromises);
 
-      // Step 4: Generate team stats
       const teamAStats = await teamStatsApi.generateTeamStats(game.id, 'TEAM_A');
       const teamBStats = await teamStatsApi.generateTeamStats(game.id, 'TEAM_B');
 
-      // Step 5: Update game with team references
       await gameApi.updateGame(game.id, {
         teamAId: teamA.id,
         teamBId: teamB.id,
@@ -68,19 +64,16 @@ export const useMatchStats = () => {
         teamBScore: teamBStats.totalPoints,
       });
 
-      // Step 5.5: Generate AI analysis (after all stats are in place)
       try {
         await gameApi.generateAnalysis(game.id);
       } catch (err) {
-        // Don't throw - match creation should succeed even if AI fails
       }
 
-      // Step 6: Create videos if any
       if (matchData.videos && matchData.videos.length > 0) {
         const videoPromises = matchData.videos.map((video) =>
           videoApi.createVideo({
             ...video,
-            gameId: game.id, // Replace temp ID with actual game ID
+            gameId: game.id,
           })
         );
         await Promise.all(videoPromises);
@@ -99,7 +92,6 @@ export const useMatchStats = () => {
     setError(null);
 
     try {
-      // Step 1: Update the game metadata
       await gameApi.updateGame(gameId, {
         gameNumber: matchData.metadata.gameNumber,
         date: matchData.metadata.date,
@@ -107,12 +99,10 @@ export const useMatchStats = () => {
         notes: matchData.metadata.notes,
       });
 
-      // Step 2: Get existing teams
       const existingTeams = await teamApi.getTeamsByGameId(gameId);
       const teamA = existingTeams.find(t => t.teamType === 'TEAM_A');
       const teamB = existingTeams.find(t => t.teamType === 'TEAM_B');
 
-      // Step 3: Update teams with new player lists
       if (teamA) {
         await teamApi.updateTeam(teamA.id, {
           playerIds: matchData.teamPlayers.teamA.map(p => p.id),
@@ -125,22 +115,18 @@ export const useMatchStats = () => {
         });
       }
 
-      // Step 4: Get existing player stats for this game
       const existingPlayerStats = await playerStatsApi.getPlayerStatsByGameId(gameId);
 
-      // Step 5: Delete all existing player stats (ignore 404 errors)
       await Promise.all(existingPlayerStats.map(async (stat) => {
         try {
           await playerStatsApi.deletePlayerStats(stat.id);
         } catch (err: any) {
-          // Ignore 404 errors (stat already deleted), but throw other errors
           if (err?.response?.status !== 404) {
             throw err;
           }
         }
       }));
 
-      // Step 6: Create new player stats
       const playerStatsPromises = matchData.playerStats.map((playerStat) =>
         playerStatsApi.createPlayerStats({
           gameId: gameId,
@@ -158,17 +144,14 @@ export const useMatchStats = () => {
 
       await Promise.all(playerStatsPromises);
 
-      // Step 7: Recalculate team stats
       const teamAStats = await teamStatsApi.recalculateTeamStats(gameId, 'TEAM_A');
       const teamBStats = await teamStatsApi.recalculateTeamStats(gameId, 'TEAM_B');
 
-      // Step 8: Update game scores
       await gameApi.updateGame(gameId, {
         teamAScore: teamAStats.totalPoints,
         teamBScore: teamBStats.totalPoints,
       });
 
-      // Step 9: Handle video updates (only if there are new videos)
       if (matchData.videos && matchData.videos.length > 0) {
         const videoPromises = matchData.videos.map((video) => {
           const videoData = {
@@ -179,7 +162,6 @@ export const useMatchStats = () => {
         });
         await Promise.all(videoPromises);
       }
-      // Note: Video deletions are handled directly in the EditMatchStatsModal
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update match stats';
       setError(errorMessage);

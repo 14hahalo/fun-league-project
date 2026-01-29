@@ -11,7 +11,6 @@ export const useGames = () => {
     try {
       setLoading(true);
       const data = await gameApi.getAllGames();
-      // Sort games by date (newest first)
       const sortedGames = data.sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
@@ -28,7 +27,6 @@ export const useGames = () => {
   const deleteGame = async (id: string) => {
     try {
       await gameApi.deleteGame(id);
-      // Refetch games after successful deletion
       await fetchGames();
     } catch (err) {
       setError('Maç silinirken bir hata oluştu');
@@ -39,7 +37,6 @@ export const useGames = () => {
 
   useEffect(() => {
     fetchGames();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

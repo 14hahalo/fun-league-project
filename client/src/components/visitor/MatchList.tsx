@@ -74,12 +74,9 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
           onClick={() => onMatchClick(game.id)}
           className="relative group cursor-pointer"
         >
-          {/* Glow effect */}
           <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-cyan-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-300"></div>
 
-          {/* Card */}
           <div className="relative bg-[#0e1116]/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_30px_-5px_rgba(255,165,0,0.3)] transform transition-all duration-300 hover:scale-105 hover:-translate-y-2">
-            {/* Header */}
             <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -101,10 +98,8 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
               </div>
             </div>
 
-            {/* Scores */}
             <div className="p-5">
               <div className="flex items-center justify-between gap-4">
-                {/* Team A */}
                 <div className={`flex-1 text-center rounded-xl p-4 backdrop-blur-md transition-all duration-300 ${getWinnerClass(game.teamAScore, game.teamBScore, 'A')}`}>
                   <div className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-center gap-1.5 uppercase tracking-wider">
                     <span className="text-lg">🔵</span>
@@ -120,12 +115,10 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
                   )}
                 </div>
 
-                {/* VS */}
                 <div className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-cyan-400 px-2">
                   VS
                 </div>
 
-                {/* Team B */}
                 <div className={`flex-1 text-center rounded-xl p-4 backdrop-blur-md transition-all duration-300 ${getWinnerClass(game.teamAScore, game.teamBScore, 'B')}`}>
                   <div className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-center gap-1.5 uppercase tracking-wider">
                     <span className="text-lg">🔴</span>
@@ -143,7 +136,6 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-cyan-500/10 px-4 py-3 border-t border-white/10 backdrop-blur-md">
               <div className="text-center text-orange-300 text-sm font-bold group-hover:text-orange-200 transition-colors">
                 <span className="group-hover:translate-x-1 transition-transform inline-block flex items-center justify-center gap-2">

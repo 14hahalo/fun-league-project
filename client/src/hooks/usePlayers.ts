@@ -70,7 +70,6 @@ export const usePlayers = (activeOnly = false) => {
 
   useEffect(() => {
     fetchPlayers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOnly]);
 
   return {

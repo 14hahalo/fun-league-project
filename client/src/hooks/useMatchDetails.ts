@@ -27,10 +27,8 @@ export const useMatchDetails = () => {
     setError(null);
 
     try {
-      // Fetch game details
       const game = await gameApi.getGameById(gameId);
 
-      // Fetch teams
       let teamA: Team | undefined;
       let teamB: Team | undefined;
       if (game.teamAId && game.teamBId) {
@@ -40,7 +38,6 @@ export const useMatchDetails = () => {
         ]);
       }
 
-      // Fetch team stats
       let teamAStats: TeamStats | undefined;
       let teamBStats: TeamStats | undefined;
       if (game.teamAStatsId && game.teamBStatsId) {
@@ -50,13 +47,10 @@ export const useMatchDetails = () => {
         ]);
       }
 
-      // Fetch player stats
       const playerStats = await playerStatsApi.getPlayerStatsByGameId(gameId);
 
-      // Extract unique player IDs
       const uniquePlayerIds = [...new Set(playerStats.map(stat => stat.playerId))];
 
-      // Batch fetch all players at once (single API call instead of N calls)
       const playersPromises = uniquePlayerIds.map(playerId =>
         playerApi.getPlayerById(playerId).catch(err => {
           console.error(`Failed to fetch player ${playerId}:`, err);
@@ -65,14 +59,12 @@ export const useMatchDetails = () => {
       );
       const players = await Promise.all(playersPromises);
 
-      // Create player lookup map for O(1) access
       const playerMap = new Map(
         players
           .filter((p): p is NonNullable<typeof p> => p !== null)
           .map(p => [p.id, p])
       );
 
-      // Map stats to players (no additional API calls!)
       const playerStatsWithInfo: PlayerStatsWithInfo[] = playerStats.map(stat => ({
         ...stat,
         player: playerMap.get(stat.playerId)

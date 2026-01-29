@@ -7,18 +7,14 @@ export interface Game {
   status: GameStatus;
   teamAScore: number;
   teamBScore: number;
-
-  // Team references
-  teamAId?: string; // Reference to Team document for Team A
-  teamBId?: string; // Reference to Team document for Team B
-
-  // Stats references
-  teamAStatsId?: string; // Reference to TeamStats document for Team A
-  teamBStatsId?: string; // Reference to TeamStats document for Team B
-
+  teamAId?: string; 
+  teamBId?: string; 
+  teamAStatsId?: string; 
+  teamBStatsId?: string; 
   teamSize?: number; // 3v3, 4v4, or 5v5
-  notes?: string; // Ek notlar
-  aiAnalysis?: string; // AI-generated match analysis
+  notes?: string;
+  aiAnalysis?: string; 
+  seasonId?: string; 
   createdAt: Date;
   updatedAt: Date;
 }

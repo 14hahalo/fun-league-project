@@ -10,15 +10,12 @@ import { cacheService, CacheKeys } from "./cacheService";
 export class PlayerService {
   private static collection = db.collection("players");
 
-  // Tüm oyuncuları getir
   static async getAllPlayers(): Promise<Player[]> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.allPlayers();
       const cached = await cacheService.get<Player[]>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const snapshot = await this.collection.get();
 
       const players = snapshot.docs.map(doc => {
@@ -31,7 +28,6 @@ export class PlayerService {
         } as Player;
       });
 
-      // Cache the result
       await cacheService.set(cacheKey, players, cacheService.getTTL('PLAYERS'));
 
       return players;
@@ -40,15 +36,12 @@ export class PlayerService {
     }
   }
 
-  // Aktif oyuncuları getir
   static async getActivePlayers(): Promise<Player[]> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.activePlayers();
       const cached = await cacheService.get<Player[]>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const snapshot = await this.collection
         .where("isActive", "==", true)
         .get();
@@ -63,7 +56,6 @@ export class PlayerService {
         } as Player;
       });
 
-      // Cache the result
       await cacheService.set(cacheKey, players, cacheService.getTTL('PLAYERS'));
 
       return players;
@@ -72,15 +64,12 @@ export class PlayerService {
     }
   }
 
-  // ID'ye göre oyuncu getir
   static async getPlayerById(id: string): Promise<Player> {
     try {
-      // Check cache first
       const cacheKey = CacheKeys.player(id);
       const cached = await cacheService.get<Player>(cacheKey);
       if (cached) return cached;
 
-      // Fetch from Firebase
       const doc = await this.collection.doc(id).get();
 
       if (!doc.exists) {
@@ -95,7 +84,6 @@ export class PlayerService {
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as Player;
 
-      // Cache the result
       await cacheService.set(cacheKey, player, cacheService.getTTL('PLAYERS'));
 
       return player;
@@ -105,10 +93,8 @@ export class PlayerService {
     }
   }
 
-  // Yeni oyuncu oluştur
   static async createPlayer(data: CreatePlayerDto): Promise<Player> {
     try {
-      // Aynı nickname kontrolü
       const nicknameSnapshot = await this.collection
         .where("nickname", "==", data.nickname)
         .limit(1)
@@ -118,14 +104,13 @@ export class PlayerService {
         throw new AppError("Bu takma ad zaten kullanılıyor", 400);
       }
 
-      // Hash default password
       const hashedPassword = await hashPassword(DEFAULT_PLAYER_PASSWORD||"aaasssddd");
 
       const newPlayerData = {
         nickname: data.nickname,
         password: hashedPassword,
         role: PlayerRole.PLAYER,
-        needsPasswordChange: true, // New players must change password on first login
+        needsPasswordChange: true, // Yeni oyuncular ilk girişte şifreyi değiştirmeli
         firstName: data.firstName,
         lastName: data.lastName,
         photoUrl: data.photoUrl,
@@ -138,7 +123,6 @@ export class PlayerService {
 
       const docRef = await this.collection.add(newPlayerData);
 
-      // Yeni eklenen dokümanı getir
       const doc = await docRef.get();
       const savedData = doc.data()!;
 
@@ -158,7 +142,6 @@ export class PlayerService {
         updatedAt: savedData.updatedAt?.toDate() || new Date(),
       };
 
-      // Invalidate all players cache
       await cacheService.invalidate(CacheKeys.allPlayers());
       await cacheService.invalidate(CacheKeys.activePlayers());
 
@@ -169,7 +152,6 @@ export class PlayerService {
     }
   }
 
-  // Oyuncu güncelle
   static async updatePlayer(
     id: string,
     data: UpdatePlayerDto
@@ -182,7 +164,6 @@ export class PlayerService {
         throw new AppError("Oyuncu bulunamadı", 404);
       }
 
-      // Nickname güncelleniyorsa, benzersizlik kontrolü
       if (data.nickname) {
         const existingSnapshot = await this.collection
           .where("nickname", "==", data.nickname)
@@ -201,7 +182,6 @@ export class PlayerService {
 
       await docRef.update(updateData);
 
-      // Güncellenmiş dokümanı getir
       const updatedDoc = await docRef.get();
       const updatedData = updatedDoc.data()!;
 
@@ -212,7 +192,6 @@ export class PlayerService {
         updatedAt: updatedData.updatedAt?.toDate() || new Date(),
       } as Player;
 
-      // Invalidate caches
       await cacheService.invalidate(CacheKeys.player(id));
       await cacheService.invalidate(CacheKeys.allPlayers());
       await cacheService.invalidate(CacheKeys.activePlayers());
@@ -224,7 +203,6 @@ export class PlayerService {
     }
   }
 
-  // Oyuncu sil (soft delete)
   static async deletePlayer(id: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -239,7 +217,6 @@ export class PlayerService {
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      // Invalidate caches
       await cacheService.invalidate(CacheKeys.player(id));
       await cacheService.invalidate(CacheKeys.allPlayers());
       await cacheService.invalidate(CacheKeys.activePlayers());
@@ -249,7 +226,6 @@ export class PlayerService {
     }
   }
 
-  // Oyuncu kalıcı olarak sil (hard delete)
   static async permanentDeletePlayer(id: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -261,7 +237,6 @@ export class PlayerService {
 
       await docRef.delete();
 
-      // Invalidate caches
       await cacheService.invalidate(CacheKeys.player(id));
       await cacheService.invalidate(CacheKeys.allPlayers());
       await cacheService.invalidate(CacheKeys.activePlayers());
@@ -271,7 +246,6 @@ export class PlayerService {
     }
   }
 
-  // Admin sets player password
   static async setPlayerPassword(id: string, newPassword: string): Promise<void> {
     try {
       const docRef = this.collection.doc(id);
@@ -280,11 +254,7 @@ export class PlayerService {
       if (!doc.exists) {
         throw new AppError("Oyuncu bulunamadı", 404);
       }
-
-      // Hash the new password
       const hashedPassword = await hashPassword(newPassword);
-
-      // Update password and clear needsPasswordChange flag
       await docRef.update({
         password: hashedPassword,
         needsPasswordChange: false,
@@ -296,7 +266,6 @@ export class PlayerService {
     }
   }
 
-  // Bonus: Nickname'e göre arama (case-insensitive için normalize edilmiş alan kullanabilirsiniz)
   static async getPlayerByNickname(nickname: string): Promise<Player | null> {
     try {
       const snapshot = await this.collection

@@ -27,17 +27,10 @@ export const PlayerRatingModal = ({
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [_touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
 
-  // Check if current user played in this game
-  const userPlayedInGame = playersInGame.some(
-    (p) => p.player.id === user?.id
-  );
-
-  // Filter out current user from rating list
   const playersToRate = playersInGame.filter(
     (p) => p.player.id !== user?.id
   );
 
-  // Initialize ranked players when modal opens
   useEffect(() => {
     if (isOpen && user?.id) {
       loadExistingRatings();
@@ -50,7 +43,6 @@ export const PlayerRatingModal = ({
       const existingVotes = await getVoterRatings(gameId, user.id);
       setExistingRatings(existingVotes);
 
-      // If there are existing rankings, restore the order
       if (existingVotes.length > 0) {
         const ranked = [...playersToRate].sort((a, b) => {
           const aRank = existingVotes.find(v => v.ratedPlayerId === a.player.id)?.rank || 999;
@@ -62,7 +54,6 @@ export const PlayerRatingModal = ({
         setRankedPlayers([...playersToRate]);
       }
     } catch (error) {
-      console.error("Failed to load existing ratings:", error);
       setRankedPlayers([...playersToRate]);
     }
   };
@@ -88,7 +79,6 @@ export const PlayerRatingModal = ({
     setDraggedIndex(null);
   };
 
-  // Touch event handlers for mobile support
   const handleTouchStart = (e: React.TouchEvent, index: number) => {
     setDraggedIndex(index);
     setTouchStartY(e.touches[0].clientY);
@@ -98,11 +88,10 @@ export const PlayerRatingModal = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     if (draggedIndex === null || touchStartY === null) return;
 
-    e.preventDefault(); // Prevent scrolling while dragging
+    e.preventDefault(); 
     const touchY = e.touches[0].clientY;
     setTouchCurrentY(touchY);
 
-    // Calculate which item the touch is over
     const elements = document.querySelectorAll('[data-player-rank-item]');
     let targetIndex = draggedIndex;
 
@@ -137,48 +126,50 @@ export const PlayerRatingModal = ({
     }
 
     try {
-      // Submit all rankings (position in array + 1 = rank)
       const promises = rankedPlayers.map((item, index) =>
         submitRating({
           gameId,
           voterId: user.id,
           ratedPlayerId: item.player.id,
-          rank: index + 1, // 1st place = rank 1, 2nd place = rank 2, etc.
+          rank: index + 1, 
         })
       );
 
       await Promise.all(promises);
       setSubmitSuccess(true);
 
-      // Close modal after 2 seconds
       setTimeout(() => {
         setSubmitSuccess(false);
         onClose();
       }, 2000);
     } catch (error) {
-      console.error("Failed to submit rankings:", error);
       alert("Sıralama gönderilemedi. Lütfen tekrar deneyin.");
     }
   };
 
   if (!isOpen) return null;
 
-  if (!userPlayedInGame) {
+  if (!user) {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Oylamaya Erişim Yok
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Bu maçta oynamadığınız için oyuncuları oylayamazsınız.
-          </p>
-          <button
-            onClick={onClose}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors"
-          >
-            Tamam
-          </button>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-8 text-center">
+            <div className="text-6xl mb-4">🔐</div>
+            <h2 className="text-2xl font-bold text-white">
+              Giriş Yapmanız Gerekiyor
+            </h2>
+          </div>
+          <div className="p-6 text-center">
+            <p className="text-gray-600 mb-6">
+              Oyuncuları oylamak için lütfen hesabınıza giriş yapın.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Tamam
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -187,7 +178,6 @@ export const PlayerRatingModal = ({
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -217,7 +207,6 @@ export const PlayerRatingModal = ({
           </button>
         </div>
 
-        {/* Success Message */}
         {submitSuccess && (
           <div className="bg-green-50 border-l-4 border-green-500 p-4 m-4">
             <div className="flex items-center">
@@ -232,7 +221,6 @@ export const PlayerRatingModal = ({
           </div>
         )}
 
-        {/* Players List - Drag and Drop Ranking */}
         <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
            <div className="space-y-3">
             {rankedPlayers.map((item, index) => {
@@ -241,7 +229,6 @@ export const PlayerRatingModal = ({
                 (r) => r.ratedPlayerId === player.id
               );
 
-              // Rank badge colors
               const rankColors = index === 0
                 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg'
                 : index === 1
@@ -268,17 +255,14 @@ export const PlayerRatingModal = ({
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    {/* Rank Badge */}
                     <div className={`w-12 h-8 rounded-full flex items-center justify-center font-black text-xl ${rankColors}`}>
                       {index + 1}
                     </div>
 
-                    {/* Drag Handle */}
                     <div className="text-gray-400 text-2xl cursor-move">
                       ⋮⋮
                     </div>
 
-                    {/* Player Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-sm font-bold text-gray-800">
@@ -295,7 +279,6 @@ export const PlayerRatingModal = ({
                       </p>
                     </div>
 
-                    {/* Existing Rating Badge */}
                     {hasExistingRating && (
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                         Daha önce sıralandı
@@ -308,7 +291,6 @@ export const PlayerRatingModal = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             <span className="font-bold">

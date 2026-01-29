@@ -78,7 +78,6 @@ interface FIFAPlayerCardProps {
   icon: string;
 }
 
-// Calculate overall rating based on stats
 const calculateOverallRating = (player: TopPlayerStats): number => {
   const gamesPlayed = player.gamesPlayed || 1;
   const ppg = (player.totalPoints || 0) / gamesPlayed;
@@ -86,7 +85,6 @@ const calculateOverallRating = (player: TopPlayerStats): number => {
   const apg = (player.totalAssists || 0) / gamesPlayed;
   const shootingPct = player.shootingPercentage || 0;
 
-  // Weighted calculation for overall rating (scale to 99)
   const rating = Math.min(99, Math.round(
     (ppg * 3) + (rpg * 2) + (apg * 2.5) + (shootingPct * 0.5)
   ));
@@ -94,7 +92,6 @@ const calculateOverallRating = (player: TopPlayerStats): number => {
   return Math.max(65, rating); // Minimum 65
 };
 
-// Calculate individual stats for FIFA card (0-99 scale)
 const calculateStats = (player: TopPlayerStats) => {
   const gamesPlayed = player.gamesPlayed || 1;
   const ppg = (player.totalPoints || 0) / gamesPlayed;
@@ -111,7 +108,6 @@ const calculateStats = (player: TopPlayerStats) => {
   ];
 };
 
-// Convert full position names to abbreviations
 const getPositionAbbreviation = (position: string | undefined): string => {
   if (!position) return 'POS';
 
@@ -137,14 +133,13 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
   const stats = calculateStats(player);
   const position = getPositionAbbreviation(player.playerPosition);
 
-  // Transform player data to match template format
   const playerData = {
     rating: overallRating,
     position: position,
-    name: player.playerNickname || 'Unknown',
+    name: player.playerNickname || 'Bilinmiyor',
     image: player.playerPhotoUrl || '',
-    countryImage: icon, // Using icon as country/badge
-    clubImage: '', // Can be added later
+    countryImage: icon, 
+    clubImage: '',
     backfont: player.playerNickname?.toUpperCase() || 'PLAYER',
     stats: stats,
     jerseyNumber: player.playerJerseyNumber || '',
@@ -152,7 +147,6 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
 
   return (
     <div className="fifa-card-container">
-      {/* Card */}
       <div
         className="fifa-card active"
       >
@@ -165,7 +159,6 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
         <div className="fifa-card-inner" style={{
           clipPath: `url(#svgPath-${player.playerId || 'default'})`
         }}>
-          {/* Top Section */}
           <div className="fifa-card-top" style={{
             background: gradient.includes('red')
               ? 'linear-gradient(135deg, #fca5a5 0%, #dc2626 100%)'
@@ -181,7 +174,6 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
               <div className="fifa-rating-value">{playerData.jerseyNumber}</div>
               <div className="fifa-position ">{playerData.position}</div>
 
-              {/* Category Badge */}
               <div className="fifa-country">
                 <div style={{
                   backgroundImage: 'none',
@@ -237,7 +229,6 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
             <div className="fifa-backfont">{playerData.backfont}</div>
           </div>
 
-          {/* Bottom Section */}
           <div className="fifa-card-bottom" style={{
             background: gradient.includes('red')
               ? 'linear-gradient(135deg, #fca5a5 0%, #dc2626 100%)'
@@ -251,7 +242,6 @@ export const PlayerCard: React.FC<FIFAPlayerCardProps> = ({
           }}>
             <div className="fifa-player-name">{playerData.name}</div>
 
-            {/* Basketball Stats Grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',

@@ -13,16 +13,13 @@ export const useTopPlays = () => {
         setLoading(true);
         setError(null);
 
-        // Get all videos
         const allVideos = await videoApi.getAllVideos();
 
-        // Calculate last month's date range
         const now = new Date();
         const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
         lastDayLastMonth.setHours(23, 59, 59, 999);
 
-        // Filter videos from last month with playerIds length < 10 (top plays/shorts)
         const filteredVideos = allVideos.filter((video) => {
           const videoDate = new Date(video.createdAt);
           const isLastMonth =
@@ -33,7 +30,6 @@ export const useTopPlays = () => {
           return isLastMonth && isTopPlay;
         });
 
-        // Sort by creation date (newest first)
         const sortedVideos = filteredVideos.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );

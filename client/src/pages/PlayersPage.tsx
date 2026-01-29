@@ -10,9 +10,8 @@ import { playerStatsApi } from '../api/basketballApi';
 import type { TopPlayerStats } from '../hooks/useTopPlayers';
 
 export const PlayersPage = () => {
-  const { players: allPlayers, loading, error } = usePlayers(false); // Get all players (active and inactive)
+  const { players: allPlayers, loading, error } = usePlayers(false); 
 
-  // Memoize filtered players to prevent recreating array on every render
   const players = useMemo(() =>
     allPlayers.filter(player => player.role === PlayerRole.PLAYER || !player.role),
     [allPlayers]
@@ -113,11 +112,9 @@ export const PlayersPage = () => {
       const statsMap = new Map<string, TopPlayerStats>();
 
       try {
-        // Use BULK endpoint - fetches all player stats in ONE API call instead of 24+
         const playerIds = players.map(p => p.id);
         const bulkStats = await playerStatsApi.getBulkPlayerStats(playerIds);
 
-        // Process each player's stats
         players.forEach((player) => {
           const stats = bulkStats[player.id] || [];
           const averages = calculatePlayerAverages(stats, player);
@@ -126,8 +123,6 @@ export const PlayersPage = () => {
 
         setPlayerStatsMap(statsMap);
       } catch (err) {
-        console.error('Error fetching bulk player stats:', err);
-        // Fallback: set empty stats for all players
         players.forEach((player) => {
           statsMap.set(player.id, calculatePlayerAverages([], player));
         });
@@ -138,11 +133,9 @@ export const PlayersPage = () => {
     if (players.length > 0) {
       fetchAllPlayerStats();
     }
-    // Only re-fetch when the actual player IDs change, not the array reference
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [players.map(p => p.id).join(',')]);
 
-  // Memoize grouped players calculation to avoid recalculating on every render
   const groupedPlayers = useMemo(() => {
     const grouped: Record<string, Player[]> = {};
 
@@ -198,7 +191,6 @@ export const PlayersPage = () => {
   return (
     <div className={`min-h-screen py-12 px-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black`}>
       <div className="max-w-8xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className={`text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-500 to-cyan-400 mb-4 tracking-tight drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]`}>
              Katılımcılar
@@ -219,7 +211,6 @@ export const PlayersPage = () => {
         )}
 
         <div className={`flex flex-col md:flex-row justify-center gap-6 font-[Inter] mb-8 text-gray-100`}>
-          {/* Position Filter */}
           {availablePositions.length > 0 && (
             <div className="relative group w-full md:w-auto p-[1px] rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-cyan-400 hover:from-cyan-400 hover:to-orange-500 transition-all">
               <div className="bg-[#0e1116]/90 backdrop-blur-xl rounded-2xl p-4 md:p-5 flex flex-col items-center shadow-[0_0_25px_-5px_rgba(255,165,0,0.3)]">
@@ -253,7 +244,6 @@ export const PlayersPage = () => {
             </div>
           )}
 
-          {/* Alphabetical Filter */}
           {availableLetters.length > 0 && (
             <div className="relative group w-full md:w-auto p-[1px] rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-cyan-400 hover:from-cyan-400 hover:to-orange-500 transition-all">
               <div className="bg-[#0e1116]/90 backdrop-blur-xl rounded-2xl p-4 md:p-5 flex flex-col items-center shadow-[0_0_25px_-5px_rgba(255,165,0,0.3)]">
@@ -288,7 +278,6 @@ export const PlayersPage = () => {
           )}
         </div>
 
-        {/* Active Filters Indicator */}
         {(selectedLetter || selectedPosition) && (
           <div className="mt-8 mb-6 text-center">
             <div className="flex flex-wrap justify-center gap-3">
@@ -310,7 +299,6 @@ export const PlayersPage = () => {
         )}
 
 
-        {/* Players Grid */}
         {filteredPlayers.length === 0 ? (
           <div className="mt-12 text-center py-16 relative group">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-cyan-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
@@ -328,7 +316,6 @@ export const PlayersPage = () => {
             {filteredPlayers.map((player) => {
               const playerStats = playerStatsMap.get(player.id);
 
-              // If stats are not loaded yet, show a placeholder or skip
               if (!playerStats) {
                 return (
                   <div
@@ -342,14 +329,12 @@ export const PlayersPage = () => {
                 );
               }
 
-              // Get the extended stats
               const extendedStats = playerStats as TopPlayerStats & {
                 efficiency?: number;
                 twoPointPercentage?: number;
                 threePointPercentage?: number;
               };
 
-              // Determine gradient based on position or random
               const gradients = [
                 'from-yellow-500 via-yellow-600 to-yellow-700',
                 'from-orange-600 via-orange-700 to-orange-800',
@@ -381,7 +366,6 @@ export const PlayersPage = () => {
           </div>
         )}
 
-        {/* Total Count */}
         {!selectedLetter && !selectedPosition && (
           <div className="text-center mt-16 mb-8">
             <div className="relative inline-block group">
@@ -396,7 +380,6 @@ export const PlayersPage = () => {
         )}
       </div>
 
-      {/* Player Details Modal */}
       {selectedPlayer && (
         <PlayerDetailsModal player={selectedPlayer} onClose={handleCloseModal} />
       )}

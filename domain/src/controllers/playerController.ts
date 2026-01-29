@@ -71,23 +71,21 @@ export class PlayerController {
       const userRole = (req as any).userRole;
       const targetPlayerId = req.params.id;
 
-      // Check if user is admin or updating their own profile
       if (userRole !== PlayerRole.ADMIN && userId !== targetPlayerId) {
         res.status(403).json({
           status: "error",
-          message: "You can only update your own profile",
+          message: "Yalnızca kendinize ait profili güncelleyebilirsiniz",
         });
         return;
       }
 
       const updateData: UpdatePlayerDto = req.body;
 
-      // If user is not admin, prevent them from changing sensitive fields
       if (userRole !== PlayerRole.ADMIN) {
         delete (updateData as any).role;
         delete (updateData as any).isActive;
-        delete (updateData as any).email; // Prevent email change for security
-        delete (updateData as any).password; // Password should be changed through a separate endpoint
+        delete (updateData as any).email; // Güvenlik için email değişikliğini engelle
+        delete (updateData as any).password; // Şifre ayrı bir endpoint üzerinden değiştirilmeli
       }
 
       const updatedPlayer = await PlayerService.updatePlayer(
@@ -103,7 +101,7 @@ export class PlayerController {
     }
   }
 
-  // POST /api/players/:id/set-password - Admin sets player password
+  // POST /api/players/:id/set-password - Admin oyuncu şifresini belirler
   static async setPlayerPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -112,7 +110,7 @@ export class PlayerController {
       if (!newPassword || newPassword.length < 6) {
         res.status(400).json({
           status: "error",
-          message: "New password must be at least 6 characters long",
+          message: "Yeni parolanın az 6 karakter olması lazım",
         });
         return;
       }
@@ -121,7 +119,7 @@ export class PlayerController {
 
       res.status(200).json({
         status: "success",
-        message: "Password set successfully",
+        message: "Parola başarılı bir şekilde oluşturuldu",
       });
     } catch (error) {
       next(error);

@@ -11,11 +11,10 @@ const generateHashedPassword = async () => {
   }
 
   try {
-    const hashedPassword = await hashPassword(password);
-    console.log('Hashed password:', hashedPassword);
+    await hashPassword(password);
     process.exit(0);
   } catch (error) {
-    console.error('Error generating password:', error);
+    console.error('Şifreleme esnasında hata oluştu:', error);
     process.exit(1);
   }
 };

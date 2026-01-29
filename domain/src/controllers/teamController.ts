@@ -5,7 +5,6 @@ import { UpdateTeamDto } from "../dtos/Team/UpdateTeamDTO";
 import { openAIService } from "../services/openAIService";
 
 export class TeamController {
-  // Create team
   static async createTeam(
     req: Request,
     res: Response,
@@ -25,7 +24,6 @@ export class TeamController {
     }
   }
 
-  // Get team by ID
   static async getTeamById(
     req: Request,
     res: Response,
@@ -44,7 +42,6 @@ export class TeamController {
     }
   }
 
-  // Get teams by game ID
   static async getTeamsByGameId(
     req: Request,
     res: Response,
@@ -63,7 +60,6 @@ export class TeamController {
     }
   }
 
-  // Get specific team for a game
   static async getTeamForGame(
     req: Request,
     res: Response,
@@ -93,7 +89,6 @@ export class TeamController {
     }
   }
 
-  // Update team
   static async updateTeam(
     req: Request,
     res: Response,
@@ -114,7 +109,6 @@ export class TeamController {
     }
   }
 
-  // Delete team
   static async deleteTeam(
     req: Request,
     res: Response,
@@ -133,7 +127,6 @@ export class TeamController {
     }
   }
 
-  // Add player to team
   static async addPlayerToTeam(
     req: Request,
     res: Response,
@@ -163,7 +156,6 @@ export class TeamController {
     }
   }
 
-  // Remove player from team
   static async removePlayerFromTeam(
     req: Request,
     res: Response,
@@ -183,7 +175,6 @@ export class TeamController {
     }
   }
 
-  // Build balanced teams using AI
   static async buildBalancedTeams(
     req: Request,
     res: Response,
@@ -195,7 +186,7 @@ export class TeamController {
       if (!playerIds || !Array.isArray(playerIds)) {
         res.status(400).json({
           success: false,
-          message: "playerIds array is required",
+          message: "playerId dizisi gerekli",
         });
         return;
       }
@@ -203,7 +194,7 @@ export class TeamController {
       if (playerIds.length !== 10) {
         res.status(400).json({
           success: false,
-          message: "Exactly 10 players are required",
+          message: "10 oyuncu seçimi şartı",
         });
         return;
       }
@@ -213,7 +204,7 @@ export class TeamController {
       res.status(200).json({
         success: true,
         data: result,
-        message: "Balanced teams created successfully",
+        message: "Takımlar dengelendi",
       });
     } catch (error) {
       next(error);

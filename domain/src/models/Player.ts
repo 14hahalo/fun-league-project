@@ -16,22 +16,21 @@ export interface PlayerBadges {
 
 export interface Player {
   id: string;
-  nickname: string; // "HCT", "İlkerGang", "Cano" - Used for login
-  password: string; // Hashed password
-  role: PlayerRole; // ADMIN or PLAYER
-  needsPasswordChange: boolean; // True if user needs to change default password
+  nickname: string;
+  password: string;
+  role: PlayerRole;
+  needsPasswordChange: boolean;
   firstName?: string;
   lastName?: string;
   photoUrl?: string;
   jerseyNumber?: number;
   position?: Position;
-  height?: number; // Height in cm
-  badges?: PlayerBadges; // Player's selected badges (one per category)
+  height?: number; 
+  badges?: PlayerBadges; 
   isActive: boolean;
-  refreshToken?: string; // For JWT refresh token management
+  refreshToken?: string; 
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Default password for new players
 export const DEFAULT_PLAYER_PASSWORD = process.env.PLAYERPASS ;

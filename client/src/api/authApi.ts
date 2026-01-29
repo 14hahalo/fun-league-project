@@ -8,7 +8,6 @@ export const authService = {
   },
 
   async changePassword(data: ChangePasswordDto): Promise<void> {
-    // The token is automatically added by the axios interceptor in axiosConfig
     await apiClient.post('/auth/change-password', data);
   },
 
@@ -21,12 +20,10 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    // The token is automatically added by the axios interceptor in axiosConfig
     await apiClient.post('/auth/logout', {});
   },
 
   async getCurrentUser(): Promise<User> {
-    // The token is automatically added by the axios interceptor in axiosConfig
     const response = await apiClient.get<{ success: boolean; data: User }>('/auth/me');
     return response.data.data;
   },

@@ -8,11 +8,11 @@ export interface JwtPayload {
 }
 
 if (!process.env.JWT_ACCESS_SECRET) {
-  throw new Error('JWT_ACCESS_SECRET environment variable is not set');
+  throw new Error('JWT_ACCESS_SECRET bulunamadı');
 }
 
 if (!process.env.JWT_REFRESH_SECRET) {
-  throw new Error('JWT_REFRESH_SECRET environment variable is not set');
+  throw new Error('JWT_REFRESH_SECRET bulunamadı');
 }
 
 const ACCESS_TOKEN_SECRET: Secret = process.env.JWT_ACCESS_SECRET;
@@ -41,7 +41,7 @@ export const verifyAccessToken = (token: string): JwtPayload => {
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
 
     if (typeof decoded === 'string') {
-      throw new Error('Invalid token format');
+      throw new Error('Token formatı hatalı');
     }
 
     return {
@@ -51,12 +51,12 @@ export const verifyAccessToken = (token: string): JwtPayload => {
     };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Access token expired');
+      throw new Error('Access token süresi doldu');
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid access token');
+      throw new Error('Geçersiz access token');
     }
-    throw new Error('Access token verification failed');
+    throw new Error('Access token onayı esnasında hata oluştu');
   }
 };
 
@@ -65,7 +65,7 @@ export const verifyRefreshToken = (token: string): JwtPayload => {
     const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
 
     if (typeof decoded === 'string') {
-      throw new Error('Invalid token format');
+      throw new Error('Geçersiz token formatı');
     }
 
     return {
@@ -75,11 +75,11 @@ export const verifyRefreshToken = (token: string): JwtPayload => {
     };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Refresh token expired');
+      throw new Error('Refresh token süresi doldu');
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid refresh token');
+      throw new Error('Geçersiz refresh token');
     }
-    throw new Error('Refresh token verification failed');
+    throw new Error('Refresh token onayı esnasında hata oluştu');
   }
 };

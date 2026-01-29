@@ -28,7 +28,7 @@ app.use("/api", routes);
 app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "success",
-    message: "Server is running!",
+    message: "Sunucu ayağa kalktı !",
     timestamp: new Date().toISOString(),
   });
 });

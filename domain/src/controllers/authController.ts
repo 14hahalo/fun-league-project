@@ -9,11 +9,10 @@ class AuthController {
     try {
       const loginDto: LoginDto = req.body;
 
-      // Validate required fields
       if (!loginDto.nickname || !loginDto.password) {
         res.status(400).json({
           success: false,
-          message: 'Nickname and password are required',
+          message: 'Kullanıcı Adı ve şifre boş geçilemez',
         });
         return;
       }
@@ -23,13 +22,13 @@ class AuthController {
       res.status(200).json({
         success: true,
         data: authResponse,
-        message: 'Login successful',
+        message: 'Giriş Başarılı',
       });
     } catch (error) {
       res.status(401).json({
         success: false,
-        message: 'Login failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Hatalı Giriş Denemesi',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata',
       });
     }
   }
@@ -42,16 +41,15 @@ class AuthController {
       if (!userId) {
         res.status(401).json({
           success: false,
-          message: 'Unauthorized',
+          message: 'Yetkiniz Yok',
         });
         return;
       }
 
-      // Validate required fields
       if (!changePasswordDto.newPassword) {
         res.status(400).json({
           success: false,
-          message: 'New password is required',
+          message: 'Yeni şifre giriniz',
         });
         return;
       }
@@ -60,14 +58,14 @@ class AuthController {
 
       res.status(200).json({
         success: true,
-        message: 'Password changed successfully',
+        message: 'Şifre Başarı ile güncellendi',
       });
     } catch (error) {
-      console.error('Password change error:', error);
+      console.error('Şifre değiştirme esnasında bir hata oluştu:', error);
       res.status(400).json({
         success: false,
-        message: 'Password change failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Şifre değiştirme esnasında bir hata oluştu',
+        error: error instanceof Error ? error.message : 'Bilinmeyen hata',
       });
     }
   }
@@ -79,7 +77,7 @@ class AuthController {
       if (!refreshToken) {
         res.status(400).json({
           success: false,
-          message: 'Refresh token is required',
+          message: 'Refresh token bulunamadı',
         });
         return;
       }
@@ -89,26 +87,25 @@ class AuthController {
       res.status(200).json({
         success: true,
         data: tokens,
-        message: 'Token refreshed successfully',
+        message: 'Token başarı ile yenilendi',
       });
     } catch (error) {
       res.status(401).json({
         success: false,
-        message: 'Token refresh failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Token yenilemesi hatalı',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata',
       });
     }
   }
 
   async logout(req: Request, res: Response): Promise<void> {
     try {
-      // userId is added by auth middleware
       const userId = (req as any).userId;
 
       if (!userId) {
         res.status(401).json({
           success: false,
-          message: 'Unauthorized',
+          message: 'Yetkiniz yok',
         });
         return;
       }
@@ -117,26 +114,25 @@ class AuthController {
 
       res.status(200).json({
         success: true,
-        message: 'Logout successful',
+        message: 'Çıkış Başarılı',
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Logout failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Çıkış yaparken hata ile karşılaşıldı',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata',
       });
     }
   }
 
   async getCurrentUser(req: Request, res: Response): Promise<void> {
     try {
-      // userId is added by auth middleware
       const userId = (req as any).userId;
 
       if (!userId) {
         res.status(401).json({
           success: false,
-          message: 'Unauthorized',
+          message: 'Yetkiniz yok',
         });
         return;
       }
@@ -146,7 +142,7 @@ class AuthController {
       if (!user) {
         res.status(404).json({
           success: false,
-          message: 'User not found',
+          message: 'Kullanıcı Bulunamadı',
         });
         return;
       }
@@ -154,13 +150,13 @@ class AuthController {
       res.status(200).json({
         success: true,
         data: user,
-        message: 'User retrieved successfully',
+        message: 'User başarı ile eşleşti',
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to get current user',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'User eşleşme hatası',
+        error: error instanceof Error ? error.message : 'Bilinmeyen Hata',
       });
     }
   }

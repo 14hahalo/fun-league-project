@@ -35,7 +35,6 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-gray-800/50 backdrop-blur-md border border-orange-500/20 rounded-2xl shadow-2xl p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
               <span className="text-4xl">🏀</span>
@@ -46,7 +45,6 @@ export const LoginPage = () => {
             <p className="text-gray-300">Lakabınızla giriş yapınız</p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="bg-red-500/20 border-2 border-red-500 text-red-200 px-4 py-3 rounded-lg mb-6 backdrop-blur-md">
               {error}
@@ -54,7 +52,6 @@ export const LoginPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Nickname Input */}
             <div>
               <label htmlFor="nickname" className="block text-sm font-semibold text-gray-300 mb-2">
                 Lakap
@@ -70,7 +67,6 @@ export const LoginPage = () => {
               />
             </div>
 
-            {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-300 mb-2">
                 Şifre
@@ -86,7 +82,6 @@ export const LoginPage = () => {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -96,7 +91,6 @@ export const LoginPage = () => {
             </button>
           </form>
 
-          {/* Continue Without Login Link */}
           <div className="mt-6 text-center">
             <a href="/" className="text-sm text-gray-400 hover:text-orange-500 transition-colors">
               Giriş yapmadan devam et

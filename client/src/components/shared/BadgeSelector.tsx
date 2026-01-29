@@ -44,23 +44,20 @@ export const BadgeSelector: React.FC<BadgeSelectorProps> = ({
     const newBadges = { ...selectedBadges };
     const currentBadgeCount = Object.keys(selectedBadges).length;
 
-    // Toggle: if same badge is clicked, unselect it
     if (newBadges[category as keyof PlayerBadges] === badgeName) {
       delete newBadges[category as keyof PlayerBadges];
     } else {
-      // Check if already has a badge in this category
       const hasExistingBadgeInCategory = !!newBadges[category as keyof PlayerBadges];
 
-      // If trying to add a new badge (not replacing) and already at max (3), prevent it
       if (!hasExistingBadgeInCategory && currentBadgeCount >= 3) {
-        return; // Don't allow more than 3 total badges
+        return; 
       }
 
       newBadges[category as keyof PlayerBadges] = badgeName;
     }
 
     onChange(newBadges);
-    setSelectedCategory(null); // Close modal after selection
+    setSelectedCategory(null); 
   };
 
   const categoryColors: Record<string, { border: string; bg: string; text: string; selected: string; hover: string }> = {
@@ -122,7 +119,6 @@ export const BadgeSelector: React.FC<BadgeSelectorProps> = ({
         </span>
       </div>
 
-      {/* 2x3 Grid of Categories */}
       <div className="grid grid-cols-2 gap-3">
         {categories.map((category) => {
           const selectedBadge = selectedBadges[category as keyof PlayerBadges];
@@ -153,11 +149,9 @@ export const BadgeSelector: React.FC<BadgeSelectorProps> = ({
         })}
       </div>
 
-      {/* Badge Selection Modal */}
       {selectedCategory && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden border-2 border-gray-700">
-            {/* Header */}
             <div className={`px-4 py-3 flex justify-between items-center ${categoryColors[selectedCategory].bg} border-b-2 ${categoryColors[selectedCategory].border}`}>
               <h3 className={`font-bold text-lg ${categoryColors[selectedCategory].text}`}>
                 {selectedCategory} Rozetleri
@@ -172,7 +166,6 @@ export const BadgeSelector: React.FC<BadgeSelectorProps> = ({
               </button>
             </div>
 
-            {/* Badge List */}
             <div className="p-4 space-y-2 overflow-y-auto max-h-[calc(80vh-4rem)]">
               {badges
                 .filter((b) => b.category === selectedCategory)

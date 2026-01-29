@@ -6,8 +6,8 @@ export async function setUserCustomClaims(userId: string, role: 'ADMIN' | 'PLAYE
       role: role,
     });
   } catch (error) {
-    console.error('Failed to set custom claims:', error);
-    throw new Error(`Failed to set custom claims: ${error}`);
+    console.error('Hata oluştu, Custom Claims:', error);
+    throw new Error(`Hata oluştu, Custom Claims: ${error}`);
   }
 }
 
@@ -18,8 +18,8 @@ export async function createCustomToken(userId: string, role: 'ADMIN' | 'PLAYER'
     });
     return customToken;
   } catch (error) {
-    console.error('Failed to create custom token:', error);
-    throw new Error(`Failed to create custom token: ${error}`);
+    console.error('Custom token oluştururken hata oluştu:', error);
+    throw new Error(`Custom token oluştururken hata oluştu: ${error}`);
   }
 }
 
@@ -31,7 +31,7 @@ export async function verifyFirebaseToken(idToken: string) {
       role: decodedToken.role as 'ADMIN' | 'PLAYER',
     };
   } catch (error) {
-    console.error('Failed to verify token:', error);
-    throw new Error(`Failed to verify token: ${error}`);
+    console.error('Token onay esnasında hata oluştu:', error);
+    throw new Error(`Token onay esnasında hata oluştu: ${error}`);
   }
 }

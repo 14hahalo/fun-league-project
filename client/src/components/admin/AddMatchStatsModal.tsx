@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TeamPlayerSelection } from './TeamPlayerSelection';
 import { StatsEntryForm } from './StatsEntryForm';
 import { VideoUploadForm } from './VideoUploadForm';
+import { useActiveSeason } from '../../hooks/useActiveSeason';
 import type { Player } from '../../types/player.types';
 import type { CreateVideoDto } from '../../types/basketball.types';
 
@@ -16,6 +17,7 @@ export interface MatchMetadata {
   date: string;
   teamSize?: number;
   notes?: string;
+  seasonId?: string;
 }
 
 export interface TeamPlayers {
@@ -44,19 +46,27 @@ export interface MatchStatsData {
 }
 
 export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStatsModalProps) => {
+  const { activeSeason } = useActiveSeason();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [metadata, setMetadata] = useState<MatchMetadata>({
     gameNumber: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
+    seasonId: undefined,
   });
+
+  useEffect(() => {
+    if (activeSeason?.id && !metadata.seasonId) {
+      setMetadata(prev => ({ ...prev, seasonId: activeSeason.id }));
+    }
+  }, [activeSeason, metadata.seasonId]);
   const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({
     teamA: [],
     teamB: [],
   });
   const [playerStats, setPlayerStats] = useState<PlayerStatsInput[]>([]);
   const [videos, setVideos] = useState<CreateVideoDto[]>([]);
-  const [tempGameId] = useState<string>(`temp-${Date.now()}`); // Temporary ID for form
+  const [tempGameId] = useState<string>(`temp-${Date.now()}`); 
 
   const handleStep1Complete = (meta: MatchMetadata, teams: TeamPlayers) => {
     setMetadata(meta);
@@ -100,13 +110,11 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
     await handleStep3Complete();
   };
 
-  // Get all players from both teams for video tagging
   const allMatchPlayers = [...teamPlayers.teamA, ...teamPlayers.teamB];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
-        {/* Header */}
         <div className="sticky top-0 bg-orange-600 text-white px-6 py-4 flex justify-between items-center rounded-t-lg z-10">
           <h2 className="text-2xl font-bold">
             Maç İstatistikleri Ekle - Adım {step}/3
@@ -119,7 +127,6 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           {step === 1 ? (
             <TeamPlayerSelection
@@ -154,7 +161,6 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
                 videos={videos}
               />
 
-              {/* Action Buttons */}
               <div className="flex gap-4">
                 <button
                   onClick={handleBack}

@@ -11,31 +11,27 @@ const COLLECTION_NAME = 'players';
 class AuthService {
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     try {
-      // Find user by nickname
       const usersSnapshot = await db
         .collection(COLLECTION_NAME)
         .where('nickname', '==', loginDto.nickname)
         .get();
 
       if (usersSnapshot.empty) {
-        throw new Error('Invalid nickname or password');
+        throw new Error('Geçersiz kullanıcı adı veya şifre');
       }
 
       const playerDoc = usersSnapshot.docs[0];
       const player = { ...playerDoc.data(), id: playerDoc.id } as Player;
 
-      // Check if user is active
       if (!player.isActive) {
-        throw new Error('Account is deactivated');
+        throw new Error('Kullanıcı pasif statüsünde !');
       }
 
-      // Verify password
       const isPasswordValid = await comparePassword(loginDto.password, player.password);
       if (!isPasswordValid) {
-        throw new Error('Invalid nickname or password');
+        throw new Error('Geçersiz kullanıcı adı veya şifre');
       }
 
-      // Generate tokens
       const accessToken = generateAccessToken({
         userId: player.id,
         email: '',
@@ -48,7 +44,6 @@ class AuthService {
         role: player.role,
       });
 
-      // Update refresh token in database
       await playerDoc.ref.update({
         refreshToken,
         updatedAt: new Date(),
@@ -69,7 +64,7 @@ class AuthService {
         },
       };
     } catch (error) {
-      throw new Error(`Login failed: ${error}`);
+      throw new Error(`Giriş Hatalı : ${error}`);
     }
   }
 
@@ -78,18 +73,15 @@ class AuthService {
       const playerDoc = await db.collection(COLLECTION_NAME).doc(userId).get();
 
       if (!playerDoc.exists) {
-        throw new Error('User not found');
+        throw new Error('Kullanıcı Bulunamadı');
       }
 
-      // Validate new password
       if (changePasswordDto.newPassword.length < 6) {
-        throw new Error('New password must be at least 6 characters long');
+        throw new Error('Yeni şifresiniz en az 6 karakter uzunluğunda olmalı');
       }
 
-      // Hash new password
       const hashedNewPassword = await hashPassword(changePasswordDto.newPassword);
 
-      // Update password and clear needsPasswordChange flag
       await playerDoc.ref.update({
         password: hashedNewPassword,
         needsPasswordChange: false,
@@ -97,33 +89,30 @@ class AuthService {
       });
 
     } catch (error) {
-      throw new Error(`Password change failed: ${error}`);
+      throw new Error(`Parola değiştirme hatası : ${error}`);
     }
   }
 
   async refreshAccessToken(oldRefreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      // Verify refresh token
       const payload = verifyRefreshToken(oldRefreshToken);
 
-      // Find user and verify refresh token matches
       const playerDoc = await db.collection(COLLECTION_NAME).doc(payload.userId).get();
 
       if (!playerDoc.exists) {
-        throw new Error('User not found');
+        throw new Error('Kullanıcı Bulunamadı');
       }
 
       const player = { ...playerDoc.data(), id: playerDoc.id } as Player;
 
       if (player.refreshToken !== oldRefreshToken) {
-        throw new Error('Invalid refresh token');
+        throw new Error('Geçersiz refresh token');
       }
 
       if (!player.isActive) {
-        throw new Error('Account is deactivated');
+        throw new Error('Kullanıcı aktif değildir !');
       }
 
-      // Generate new tokens
       const accessToken = generateAccessToken({
         userId: player.id,
         email: '',
@@ -136,7 +125,6 @@ class AuthService {
         role: player.role,
       });
 
-      // Update refresh token in database
       await playerDoc.ref.update({
         refreshToken,
         updatedAt: new Date(),
@@ -144,7 +132,7 @@ class AuthService {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      throw new Error(`Token refresh failed: ${error}`);
+      throw new Error(`Token yenilenirken hata oluştu: ${error}`);
     }
   }
 
@@ -153,16 +141,15 @@ class AuthService {
       const playerDoc = await db.collection(COLLECTION_NAME).doc(userId).get();
 
       if (!playerDoc.exists) {
-        throw new Error('User not found');
+        throw new Error('Kullanıcı Bulunamadı');
       }
 
-      // Remove refresh token from database
       await playerDoc.ref.update({
         refreshToken: null,
         updatedAt: new Date(),
       });
     } catch (error) {
-      throw new Error(`Logout failed: ${error}`);
+      throw new Error(`Giriş hatalı: ${error}`);
     }
   }
 
@@ -176,7 +163,6 @@ class AuthService {
 
       const player = { ...playerDoc.data(), id: playerDoc.id } as Player;
 
-      // Return player without password and refreshToken
       return {
         id: player.id,
         nickname: player.nickname,
@@ -190,7 +176,7 @@ class AuthService {
         isActive: player.isActive,
       };
     } catch (error) {
-      throw new Error(`Failed to get current user: ${error}`);
+      throw new Error(`Güncel oyuncu bilgileri çekilirken hata oluştu: ${error}`);
     }
   }
 }

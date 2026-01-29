@@ -23,12 +23,9 @@ export interface StatLeader {
 }
 
 export interface MonthlyLeaders {
-  // Top 3 by efficiency (podium)
   firstEfficient: StatLeader | null;
   secondEfficient: StatLeader | null;
   thirdEfficient: StatLeader | null;
-
-  // Other leaders
   mostPoints: StatLeader | null;
   mostRebounds: StatLeader | null;
   mostAssists: StatLeader | null;
@@ -36,16 +33,10 @@ export interface MonthlyLeaders {
   dominant3PP: StatLeader | null;
 }
 
-// Calculate days from today back to the start of last month
 const getLastMonthDays = (): number => {
   const now = new Date();
-
-  // Get the first day of last month
   const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-  // Calculate days from today back to the first day of last month
   const daysBack = Math.ceil((now.getTime() - firstDayLastMonth.getTime()) / (1000 * 60 * 60 * 24));
-
   return daysBack;
 };
 
@@ -70,27 +61,21 @@ export const useLastMonthLeaders = () => {
         setLoading(true);
         setError(null);
 
-        // Get last month's name and date range
         const now = new Date();
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
                            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
         setMonthName(monthNames[lastMonth.getMonth()]);
 
-        // Calculate the last day of last month (which is the day before the first day of this month)
         const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const lastDayLastMonth = new Date(firstDayThisMonth.getTime() - 1);
-        // Set time to end of day
         lastDayLastMonth.setHours(23, 59, 59, 999);
 
-        // Fetch stats for last month only
         const daysBack = getLastMonthDays();
         const data = await playerStatsApi.getTopPlayers(daysBack, lastDayLastMonth);
 
-        // Fetch all players to get their details
         const players = await playerApi.getAllPlayers();
 
-        // Helper function to enrich player data
         const enrichPlayerData = (statsData: any): StatLeader | null => {
           if (!statsData) return null;
 
@@ -109,11 +94,6 @@ export const useLastMonthLeaders = () => {
             ? ((statsData.twoPointMade + statsData.threePointMade) / totalShots) * 100
             : 0;
 
-          // Calculate average efficiency per game
-          // EFF = 2×2PM + 3×3PM + 1.5×AST + 0.8×DEFREB + 1.2×OFFREB - (0.8×2Pmissed + 1.2×3Pmissed)
-          // Note: Backend returns aggregated totals, we need to calculate per-game efficiency
-          // Since we don't have defensive/offensive rebounds separately, we'll use approximation
-          // Assume defensive rebounds = 60% of total, offensive = 40%
           const gamesPlayed = statsData.gamesPlayed || 1;
           const avgDefReb = (statsData.totalRebounds * 0.6) / gamesPlayed;
           const avgOffReb = (statsData.totalRebounds * 0.4) / gamesPlayed;
@@ -152,7 +132,6 @@ export const useLastMonthLeaders = () => {
           };
         };
 
-        // Enrich all player data
         const enrichedData = {
           topScorer: enrichPlayerData(data.topScorer),
           bestShooter: enrichPlayerData(data.bestShooter),
@@ -160,18 +139,14 @@ export const useLastMonthLeaders = () => {
           mostAssists: enrichPlayerData(data.mostAssists),
         };
 
-        // Calculate top 3 efficient players from ALL players who played in October
-        // Use allPlayerAggregates from backend which contains ALL players, not just category leaders
         const allPlayersEnriched = (data.allPlayerAggregates || [])
           .map((aggregate: any) => enrichPlayerData(aggregate))
           .filter(Boolean) as StatLeader[];
 
-        // Sort ALL players by efficiency
         const sortedByEfficiency = [...allPlayersEnriched].sort((a, b) =>
           (b.efficiency || 0) - (a.efficiency || 0)
         );
 
-        // Find dominant 2P and 3P shooters from all players
         const sortedBy2P = [...allPlayersEnriched]
           .filter(p => (p.twoPointAttempts || 0) >= 5)
           .sort((a, b) => (b.twoPointPercentage || 0) - (a.twoPointPercentage || 0));
@@ -198,7 +173,6 @@ export const useLastMonthLeaders = () => {
     };
 
     fetchLeaders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { leaders, loading, error, monthName };

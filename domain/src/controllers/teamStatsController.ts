@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { TeamStatsService } from "../services/teamStatsService";
 
 export class TeamStatsController {
-  // Generate team stats from player stats
   static async generateTeamStats(
     req: Request,
     res: Response,
@@ -34,7 +33,6 @@ export class TeamStatsController {
     }
   }
 
-  // Get team stats by ID
   static async getTeamStatsById(
     req: Request,
     res: Response,
@@ -53,7 +51,6 @@ export class TeamStatsController {
     }
   }
 
-  // Get all team stats for a game
   static async getTeamStatsByGameId(
     req: Request,
     res: Response,
@@ -72,7 +69,6 @@ export class TeamStatsController {
     }
   }
 
-  // Get specific team stats for a game
   static async getTeamStatsForGame(
     req: Request,
     res: Response,
@@ -102,7 +98,6 @@ export class TeamStatsController {
     }
   }
 
-  // Recalculate team stats
   static async recalculateTeamStats(
     req: Request,
     res: Response,
@@ -125,7 +120,6 @@ export class TeamStatsController {
     }
   }
 
-  // Delete team stats
   static async deleteTeamStats(
     req: Request,
     res: Response,

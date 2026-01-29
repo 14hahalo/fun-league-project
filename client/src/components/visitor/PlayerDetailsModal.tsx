@@ -27,10 +27,8 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
         setLoading(true);
         const stats = await playerStatsApi.getAllStatsForPlayer(player.id);
 
-        // Extract unique game IDs
         const uniqueGameIds = [...new Set(stats.map(stat => stat.gameId))];
 
-        // Batch fetch all games at once (much more efficient than individual calls)
         const gamesPromises = uniqueGameIds.map(gameId =>
           gameApi.getGameById(gameId).catch(err => {
             console.error(`Error fetching game ${gameId}:`, err);
@@ -39,14 +37,12 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
         );
         const games = await Promise.all(gamesPromises);
 
-        // Create a game lookup map for O(1) access
         const gameMap = new Map(
           games
             .filter((game): game is NonNullable<typeof game> => game !== null)
             .map(game => [game.id, game])
         );
 
-        // Map stats to games (no additional API calls!)
         const statsWithGames = stats
           .map((stat) => {
             const game = gameMap.get(stat.gameId);
@@ -54,7 +50,6 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
           })
           .filter((stat): stat is PlayerStatsWithGame => stat !== null);
 
-        // Sort by game date (newest first)
         statsWithGames.sort((a, b) => {
           return new Date(b.game.date).getTime() - new Date(a.game.date).getTime();
         });
@@ -83,10 +78,8 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
 
     fetchPlayerStats();
     fetchPlayerVideos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -94,7 +87,6 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
     };
   }, []);
 
-  // Handle ESC key
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -141,8 +133,8 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
     return `${value.toFixed(1)}%`;
   };
 
-  const getGameResult = (stat: PlayerStatsWithGame): 'win' | 'loss' | 'unknown' => {
-    if (!stat.game) return 'unknown';
+  const getGameResult = (stat: PlayerStatsWithGame): 'win' | 'loss' | 'Bilinmiyor' => {
+    if (!stat.game) return 'Bilinmiyor';
 
     const { teamAScore, teamBScore } = stat.game;
     const playerTeam = stat.teamType;
@@ -188,6 +180,29 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
       ? (totals.threePointMade / totals.threePointAttempts) * 100
       : 0;
 
+    const last5Stats = playerStats.slice(0, 5);
+    const last5Results = last5Stats.map(stat => getGameResult(stat));
+    const last5Wins = last5Results.filter(r => r === 'win').length;
+    const last5Losses = last5Results.filter(r => r === 'loss').length;
+
+    let winStreak = 0;
+    let streakBroken = false;
+    let totalWins = 0;
+
+    for (const stat of playerStats) {
+      const result = getGameResult(stat);
+      if (result === 'win') {
+        totalWins++;
+        if (!streakBroken) {
+          winStreak++;
+        }
+      } else if (!streakBroken) {
+        streakBroken = true;
+      }
+    }
+
+    const winPercentage = gamesPlayed > 0 ? (totalWins / gamesPlayed) * 100 : 0;
+
     return {
       gamesPlayed,
       avgPoints: (totals.points / gamesPlayed).toFixed(1),
@@ -196,6 +211,11 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
       avgEfficiency: (totals.efficiency / gamesPlayed).toFixed(1),
       twoPointPercentage: twoPointPercentage.toFixed(1),
       threePointPercentage: threePointPercentage.toFixed(1),
+      last5Wins,
+      last5Losses,
+      winStreak,
+      totalWins,
+      winPercentage: winPercentage.toFixed(1),
     };
   };
 
@@ -210,92 +230,87 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
         className="bg-gradient-to-br from-gray-900 via-gray-800 to-black border-2 border-orange-500/30 rounded-3xl max-w-7xl w-full max-h-[95vh] overflow-hidden shadow-[0_0_100px_rgba(249,115,22,0.3)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="relative bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 p-4 md:p-8 overflow-hidden">
-          {/* Animated background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-              backgroundSize: '20px 20px'
-            }}></div>
-          </div>
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-orange-500/20 via-transparent to-transparent"></div>
 
-          <div className="relative flex items-start justify-between gap-2">
-            <div className="flex flex-row md:flex-row items-center md:items-center gap-3 md:gap-6 min-w-0 flex-1">
-              {/* Player Avatar with Glow */}
-              <div className="relative group flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative w-16 h-16 md:w-28 md:h-28 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-4 border-white/50 shadow-2xl overflow-hidden">
-                  {player.photoUrl ? (
-                    <img
-                      src={player.photoUrl}
-                      alt={player.nickname}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-3xl md:text-6xl font-black text-white">{player.nickname.charAt(0).toUpperCase()}</span>
-                  )}
+          <div className="relative px-4 py-3 md:px-6 md:py-4">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="relative flex-shrink-0">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-0.5 shadow-lg shadow-orange-500/25">
+                  <div className="w-full h-full rounded-[10px] bg-gray-900 flex items-center justify-center overflow-hidden">
+                    {player.photoUrl ? (
+                      <img
+                        src={player.photoUrl}
+                        alt={player.nickname}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl md:text-3xl font-black bg-gradient-to-br from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                        {player.nickname.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                {player.jerseyNumber && (
+                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-gradient-to-br from-orange-500 to-amber-600 rounded-md px-1.5 py-0.5 shadow-lg border border-orange-400/50">
+                    <span className="text-[10px] md:text-xs font-black text-white">#{player.jerseyNumber}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="min-w-0 flex-1">
-                <h2 className="text-xl md:text-5xl font-black text-white mb-1 md:mb-2 tracking-tight drop-shadow-lg truncate">
-                  {player.nickname}
-                </h2>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h2 className="text-lg md:text-xl font-black text-white truncate tracking-tight">
+                    {player.nickname}
+                  </h2>
+                  {player.position && (
+                    <span className="flex-shrink-0 text-[10px] md:text-xl font-bold text-orange-400 bg-orange-500/10 border border-orange-500/30 rounded px-1.5 py-0.5">
+                      {player.position}
+                    </span>
+                  )}
+                </div>
                 {(player.firstName || player.lastName) && (
-                  <p className="text-xs md:text-xl text-white/90 font-semibold mb-1 md:mb-3 truncate">
+                  <p className="text-l md:text-l text-gray-400 truncate mb-1">
                     {player.firstName} {player.lastName}
                   </p>
                 )}
-                <div className="flex flex-wrap gap-1.5 md:gap-3">
-                  {player.jerseyNumber && (
-                    <div className="inline-flex items-center gap-1 md:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-2 md:px-4 py-0.5 md:py-2 border border-white/30">
-                      <span className="text-xs md:text-2xl font-black text-white">#{player.jerseyNumber}</span>
-                    </div>
-                  )}
-                  {player.position && (
-                    <div className="inline-flex items-center gap-1 md:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-2 md:px-4 py-0.5 md:py-2 border border-white/30">
-                      <span className="text-xs md:text-lg font-bold text-white">{player.position}</span>
-                    </div>
-                  )}
+                <div className="flex items-center gap-3 text-[10px] md:text-xl text-gray-500">
                   {player.height && (
-                    <div className="inline-flex items-center gap-1 md:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-2 md:px-4 py-0.5 md:py-2 border border-white/30">
-                      <span className="text-xs md:text-lg font-bold text-white">{player.height} cm</span>
-                    </div>
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7l4-4m0 0l4 4m-4-4v18" />
+                      </svg>
+                      {player.height} cm
+                    </span>
                   )}
+                  {player.weight && (
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                      </svg>
+                      {player.weight} kg
+                    </span>
+                  )}
+                  
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={onClose}
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 md:p-3 transition-all border border-white/30 group flex-shrink-0"
-            >
-              <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <button
+                onClick={onClose}
+                className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 flex items-center justify-center transition-all group"
+              >
+                <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
+
+          <div className="h-0.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent"></div>
         </div>
 
-        {/* Content */}
-        <div className="p-8 overflow-y-auto max-h-[calc(95vh-200px)] custom-scrollbar">
-          {/* Physical Stats */}
-          {(player.height || player.weight) && (
-            <div className="grid grid-cols-2 gap-4 mb-8">
-
-              {player.weight && (
-                <div className="relative group p-[2px] rounded-xl bg-gradient-to-br from-purple-400 to-pink-500">
-                  <div className="bg-gray-900 rounded-xl p-5 text-center">
-                    <div className="text-sm text-purple-400 font-bold mb-2 uppercase tracking-wider">Kilo</div>
-                    <div className="text-3xl font-black text-white">{player.weight} <span className="text-xl">kg</span></div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Oyuncu Rozetleri */}
+        <div className="p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-140px)] custom-scrollbar">
           {player.badges && Object.keys(player.badges).length > 0 && (
             <div className="mb-8">
               <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-6 flex items-center gap-3">
@@ -332,13 +347,12 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
             </div>
           )}
 
-          {/* Career Averages */}
           {averages && (
             <div className="mb-8">
               <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-cyan-400 mb-6 flex items-center gap-3">
                 <span>📊</span> Kariyer Ortalamaları
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-10 gap-3">
                 <div className="relative group p-[2px] rounded-xl bg-gradient-to-br from-orange-400 to-orange-600">
                   <div className="bg-gray-900 rounded-xl p-4 text-center">
                     <div className="text-xs text-orange-400 font-bold mb-1 uppercase">Maçlar</div>
@@ -381,11 +395,42 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
                     <div className="text-2xl font-black text-white">{averages.threePointPercentage}%</div>
                   </div>
                 </div>
+                <div className="relative group p-[2px] rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600">
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <div className="text-xs text-emerald-400 font-bold mb-1 uppercase">Son 5 Maç</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-lg font-black text-green-400">{averages.last5Wins}W</span>
+                      <span className="text-gray-500">-</span>
+                      <span className="text-lg font-black text-red-400">{averages.last5Losses}L</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative group p-[2px] rounded-xl bg-gradient-to-br from-amber-400 to-orange-600">
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <div className="text-xs text-amber-400 font-bold mb-1 uppercase">Win Streak</div>
+                    <div className="text-3xl font-black text-white flex items-center justify-center gap-1">
+                      {averages.winStreak > 0 ? (
+                        <>
+                          <span className="text-2xl">🔥</span>
+                          <span>{averages.winStreak}</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="relative group p-[2px] rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600">
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <div className="text-xs text-cyan-400 font-bold mb-1 uppercase">Win %</div>
+                    <div className="text-2xl font-black text-white">{averages.winPercentage}%</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{averages.totalWins}W / {averages.gamesPlayed}G</div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Match Statistics */}
           <div className="mb-8">
             <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-6 flex items-center gap-3">
               <span>🏀</span> Maç İstatistikleri
@@ -488,7 +533,6 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
             )}
           </div>
 
-          {/* Player Videos */}
           <div>
             {videosLoading ? (
               <div className="py-12">
@@ -504,11 +548,10 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 border-t-2 border-orange-500/30">
+        <div className="bg-gray-900/80 backdrop-blur-sm px-4 py-3 border-t border-gray-800">
           <button
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 text-lg uppercase tracking-wider"
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2.5 px-6 rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/20 text-sm uppercase tracking-wide"
           >
             Kapat
           </button>

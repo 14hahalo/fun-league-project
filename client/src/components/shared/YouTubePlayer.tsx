@@ -4,10 +4,9 @@ interface YouTubePlayerProps {
   url: string;
   title?: string;
   className?: string;
-  thumbnail?: boolean; // Show thumbnail instead of embed
-  autoplay?: boolean; // Autoplay when embedded
-  autoFullscreen?: boolean; // Auto fullscreen on mobile
-}
+  thumbnail?: boolean;  
+  autoplay?: boolean; 
+  autoFullscreen?: boolean; }
 
 export const YouTubePlayer = ({
   url,
@@ -20,18 +19,15 @@ export const YouTubePlayer = ({
   const [error, setError] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Auto fullscreen on mobile when autoplay is true
   useEffect(() => {
     if (autoFullscreen && autoplay && iframeRef.current) {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
-        // Small delay to ensure iframe is loaded
         setTimeout(() => {
           if (iframeRef.current) {
             const iframe = iframeRef.current;
             if (iframe.requestFullscreen) {
               iframe.requestFullscreen().catch(() => {
-                // Fullscreen request failed, continue playing normally
               });
             }
           }
@@ -40,12 +36,11 @@ export const YouTubePlayer = ({
     }
   }, [autoFullscreen, autoplay]);
 
-  // Extract video ID from YouTube URL
   const extractVideoId = (youtubeUrl: string): string | null => {
     try {
       const patterns = [
         /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
-        /(?:youtube\.com\/shorts\/)([^&\n?#]+)/, // YouTube Shorts support
+        /(?:youtube\.com\/shorts\/)([^&\n?#]+)/, 
         /^([a-zA-Z0-9_-]{11})$/,
       ];
 
@@ -77,7 +72,6 @@ export const YouTubePlayer = ({
     );
   }
 
-  // Show thumbnail only (for video cards)
   if (thumbnail) {
     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
@@ -88,7 +82,6 @@ export const YouTubePlayer = ({
           alt={title || 'Video thumbnail'}
           className="w-full h-full object-cover"
           onError={(e) => {
-            // Fallback to standard quality thumbnail
             const target = e.target as HTMLImageElement;
             target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
           }}
@@ -97,12 +90,10 @@ export const YouTubePlayer = ({
     );
   }
 
-  // Create embed URL for YouTube with optional autoplay and fullscreen params
   const embedUrl = `https://www.youtube.com/embed/${videoId}${autoplay ? '?autoplay=1&mute=0&fs=1&playsinline=0' : '?fs=1'}`;
 
   return (
     <div className={`relative ${className}`}>
-      {/* Responsive container with 16:9 aspect ratio */}
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <iframe
           ref={iframeRef}
