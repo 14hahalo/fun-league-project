@@ -31,6 +31,8 @@ pnpm-debug.log*
 !/package.json
 !/package-lock.json
 !/tsconfig.json
+!/vercel.json
+*vercel*.json
 !/tailwind.config.js
 !/postcss.config.js
 
