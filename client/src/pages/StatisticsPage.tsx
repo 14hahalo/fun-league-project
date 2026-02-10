@@ -87,7 +87,7 @@ export const StatisticsPage = () => {
   const { players: allPlayers, loading: playersLoading } = usePlayers(false);
   const { seasons, loading: seasonsLoading } = useSeasons();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | 'all'>('all');
-  const [sortColumn, setSortColumn] = useState<SortColumn>('avgPoints');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('avgEfficiency');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedPlayerStats[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -285,7 +285,7 @@ export const StatisticsPage = () => {
 
   const sortedStats = useMemo(() => {
     const sorted = [...aggregatedStats];
-    const multiplier = sortDirection === 'desc' ? -1 : 1;
+    const multiplier = sortDirection === 'asc' ? -1 : 1;
 
     return sorted.sort((a, b) => {
       const aValue = a[sortColumn];
