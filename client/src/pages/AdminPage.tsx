@@ -12,6 +12,7 @@ import { AddMatchStatsModal } from '../components/admin/AddMatchStatsModal';
 import { EditMatchStatsModal } from '../components/admin/EditMatchStatsModal';
 import { SetPasswordModal } from '../components/admin/SetPasswordModal';
 import { BuildTeamsModal } from '../components/admin/BuildTeamsModal';
+import { PlayerTotalStatsTable } from '../components/admin/PlayerTotalStatsTable';
 import { Loading } from '../components/shared/Loading';
 import { playerApi } from '../api/playerApi';
 import type { CreatePlayerDto, UpdatePlayerDto, Player } from '../types/player.types';
@@ -343,6 +344,12 @@ export const AdminPage = () => {
             <span>→</span>
           </div>
         </div>
+      </section>
+
+      <div className="border-t-2 border-gray-200"></div>
+
+      <section>
+        <PlayerTotalStatsTable players={players} games={games} />
       </section>
 
       <div className="border-t-2 border-gray-200"></div>
