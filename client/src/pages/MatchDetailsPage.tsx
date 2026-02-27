@@ -523,7 +523,7 @@ export const MatchDetailsPage = () => {
                             <div className="flex items-center gap-3">
                               <span className="text-4xl">⭐</span>
                               <span className="text-4xl font-black bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">
-                                {gameRatings.mvp.averageRating.toFixed(1)}
+                                {(gameRatings.mvp.averageRating ?? 0).toFixed(1)}
                               </span>
                               <span className="text-xl text-gray-600 font-black">/10</span>
                             </div>
