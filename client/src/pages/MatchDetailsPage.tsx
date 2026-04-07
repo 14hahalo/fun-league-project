@@ -5,10 +5,10 @@ import { Loading } from '../components/shared/Loading';
 import { VideoGallery } from '../components/shared/VideoGallery';
 import { videoApi } from '../api/basketballApi';
 import type { TeamStats, Video } from '../types/basketball.types';
-import { PlayerRatingModal } from '../components/visitor/PlayerRatingModal';
-import { PlayerRatingsListModal } from '../components/visitor/PlayerRatingsListModal';
+// [VOTING DISABLED] import { PlayerRatingModal } from '../components/visitor/PlayerRatingModal';
+// [VOTING DISABLED] import { PlayerRatingsListModal } from '../components/visitor/PlayerRatingsListModal';
 import { PlayerDetailsModal } from '../components/visitor/PlayerDetailsModal';
-import { useRatings } from '../hooks/useRatings';
+// [VOTING DISABLED] import { useRatings } from '../hooks/useRatings';
 import ReactMarkdown from 'react-markdown';
 import type { Player } from '../types/player.types';
 
@@ -21,21 +21,21 @@ export const MatchDetailsPage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { matchDetails, loading, error, fetchMatchDetails } = useMatchDetails();
-  const { gameRatings, fetchGameRatings } = useRatings();
-  const [showTeamB, setShowTeamB] = useState(false); 
+  // [VOTING DISABLED] const { gameRatings, fetchGameRatings } = useRatings();
+  const [showTeamB, setShowTeamB] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const [isRatingsListModalOpen, setIsRatingsListModalOpen] = useState(false);
+  // [VOTING DISABLED] const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  // [VOTING DISABLED] const [isRatingsListModalOpen, setIsRatingsListModalOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   useEffect(() => {
     if (gameId) {
       fetchMatchDetails(gameId);
       fetchVideos(gameId);
-      fetchGameRatings(gameId).catch(err => {
-        console.error('[MatchDetailsPage] Error fetching game ratings:', err);
-      });
+      // [VOTING DISABLED] fetchGameRatings(gameId).catch(err => {
+      //   console.error('[MatchDetailsPage] Error fetching game ratings:', err);
+      // });
     }
   }, [gameId]);
 
@@ -497,6 +497,7 @@ export const MatchDetailsPage = () => {
           </div>
         )}
 
+        {/* [VOTING DISABLED]
         {gameRatings && (
           <div className="mb-12">
             <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-red-400 to-orange-400 mb-10 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
@@ -587,6 +588,7 @@ export const MatchDetailsPage = () => {
             </button>
           </div>
         </div>
+        */}
 
         <div className="mb-8 flex items-center justify-center gap-6">
           <div className="relative group">
@@ -720,6 +722,7 @@ export const MatchDetailsPage = () => {
         )}
       </div>
 
+      {/* [VOTING DISABLED]
       {gameId && (
         <PlayerRatingModal
           isOpen={isRatingModalOpen}
@@ -742,6 +745,7 @@ export const MatchDetailsPage = () => {
         onClose={() => setIsRatingsListModalOpen(false)}
         gameRatings={gameRatings}
       />
+      */}
 
       {selectedPlayer && (
         <PlayerDetailsModal
