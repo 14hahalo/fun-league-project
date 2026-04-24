@@ -258,8 +258,8 @@ export const StatisticsPage = () => {
             avgOffRebounds: totals.offRebounds / gamesPlayed,
             avgDefRebounds: totals.defRebounds / gamesPlayed,
             avgAssists: totals.assists / gamesPlayed,
-            avgEfficiency: (totals.points + totals.rebounds + totals.assists -
-              ((totals.twoPointAttempts - totals.twoPointMade) + (totals.threePointAttempts - totals.threePointMade))) / gamesPlayed,
+            avgEfficiency: (totals.points + 1.5 * totals.assists + 0.8 * totals.defRebounds + 1.2 * totals.offRebounds -
+              (0.8 * (totals.twoPointAttempts - totals.twoPointMade) + 1.2 * (totals.threePointAttempts - totals.threePointMade))) / gamesPlayed,
           });
         }
 
