@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { TeamPlayerSelection } from './TeamPlayerSelection';
 import { StatsEntryForm } from './StatsEntryForm';
+import { LogUploadForm } from './LogUploadForm';
 import { VideoUploadForm } from './VideoUploadForm';
 import { useActiveSeason } from '../../hooks/useActiveSeason';
 import type { Player } from '../../types/player.types';
 import type { CreateVideoDto } from '../../types/basketball.types';
+import type { MatchLogContext } from '../../types/matchLog.types';
 
 interface AddMatchStatsModalProps {
   onClose: () => void;
@@ -43,6 +45,7 @@ export interface MatchStatsData {
   teamPlayers: TeamPlayers;
   playerStats: PlayerStatsInput[];
   videos: CreateVideoDto[];
+  logContext?: MatchLogContext;
 }
 
 export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStatsModalProps) => {
@@ -66,6 +69,8 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
   });
   const [playerStats, setPlayerStats] = useState<PlayerStatsInput[]>([]);
   const [videos, setVideos] = useState<CreateVideoDto[]>([]);
+  const [logContext, setLogContext] = useState<MatchLogContext | undefined>(undefined);
+  const [entryMethod, setEntryMethod] = useState<'manual' | 'log'>('manual');
   const [tempGameId] = useState<string>(`temp-${Date.now()}`); 
 
   const handleStep1Complete = (meta: MatchMetadata, teams: TeamPlayers) => {
@@ -74,8 +79,9 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
     setStep(2);
   };
 
-  const handleStep2Complete = (stats: PlayerStatsInput[]) => {
+  const handleStep2Complete = (stats: PlayerStatsInput[], ctx?: MatchLogContext) => {
     setPlayerStats(stats);
+    setLogContext(ctx);
     setStep(3);
   };
 
@@ -85,6 +91,7 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
       teamPlayers,
       playerStats,
       videos,
+      logContext,
     };
     await onSubmit(matchData);
     onClose();
@@ -137,12 +144,46 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
               onCancel={onClose}
             />
           ) : step === 2 ? (
-            <StatsEntryForm
-              teamPlayers={teamPlayers}
-              metadata={metadata}
-              onComplete={handleStep2Complete}
-              onBack={handleBack}
-            />
+            <div className="space-y-4">
+              {/* Entry method toggle */}
+              <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
+                <button
+                  onClick={() => setEntryMethod('manual')}
+                  className={`px-5 py-2 text-sm font-semibold transition-colors ${
+                    entryMethod === 'manual'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  ✏️ Elle Giriş
+                </button>
+                <button
+                  onClick={() => setEntryMethod('log')}
+                  className={`px-5 py-2 text-sm font-semibold transition-colors border-l border-gray-300 ${
+                    entryMethod === 'log'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  📂 Log Yöntemi
+                </button>
+              </div>
+
+              {entryMethod === 'manual' ? (
+                <StatsEntryForm
+                  teamPlayers={teamPlayers}
+                  metadata={metadata}
+                  onComplete={stats => handleStep2Complete(stats)}
+                  onBack={handleBack}
+                />
+              ) : (
+                <LogUploadForm
+                  teamPlayers={teamPlayers}
+                  onComplete={(stats, ctx) => handleStep2Complete(stats, ctx)}
+                  onBack={handleBack}
+                />
+              )}
+            </div>
           ) : (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-orange-100 to-orange-50 border-l-4 border-orange-500 p-4 rounded-lg">

@@ -111,7 +111,7 @@ export const gameService = {
     return game;
   },
 
-  async generateAnalysis(id: string): Promise<Game> {
+  async generateAnalysis(id: string, logContext?: object): Promise<Game> {
     const gameRef = db.collection(COLLECTION_NAME).doc(id);
     const gameDoc = await gameRef.get();
 
@@ -121,7 +121,7 @@ export const gameService = {
 
 
     try {
-      const analysis = await openAIService.generateMatchAnalysis(id);
+      const analysis = await openAIService.generateMatchAnalysis(id, logContext as any);
       await gameRef.update({
         aiAnalysis: analysis,
         updatedAt: new Date()

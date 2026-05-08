@@ -9,6 +9,7 @@ import videoRoutes from './videoRoutes';
 import playerRatingRoutes from './playerRatingRoutes';
 import seasonRoutes from './seasonRoutes';
 import comparisonLogRoutes from './comparisonLogRoutes';
+import matchEventLogRoutes from './matchEventLogRoutes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/videos', videoRoutes);
 router.use('/player-ratings', playerRatingRoutes);
 router.use('/seasons', seasonRoutes);
 router.use('/comparison-logs', comparisonLogRoutes);
+router.use('/match-event-logs', matchEventLogRoutes);
 
 export default router;

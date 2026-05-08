@@ -15,6 +15,38 @@ interface PlayerProfile {
   threePointPct: number;
 }
 
+interface PlayerPeriodStats {
+  playerNickname: string;
+  teamType: string;
+  twoPointMade: number;
+  twoPointAttempts: number;
+  threePointMade: number;
+  threePointAttempts: number;
+  offensiveRebounds: number;
+  defensiveRebounds: number;
+  totalRebounds: number;
+  assists: number;
+  points: number;
+}
+
+interface PeriodStats {
+  period: string;
+  teamA: PlayerPeriodStats[];
+  teamB: PlayerPeriodStats[];
+}
+
+interface LogEvent {
+  period: string;
+  actor: string;
+  event: string;
+}
+
+interface MatchLogContext {
+  events: LogEvent[];
+  periodStats: PeriodStats[];
+  totalStats: { teamA: PlayerPeriodStats[]; teamB: PlayerPeriodStats[] };
+}
+
 interface TeamBuildResponse {
   teamA: string[];
   teamB: string[];
@@ -298,7 +330,7 @@ Yanıt formatı (sadece JSON, markdown yok):
     }
   },
 
-  async generateMatchAnalysis(gameId: string): Promise<string> {
+  async generateMatchAnalysis(gameId: string, logContext?: MatchLogContext): Promise<string> {
     if (!apiKey) {
       throw new OpenAIServiceError('OpenAI API bulunamadı');
     }
@@ -353,7 +385,7 @@ Yanıt formatı (sadece JSON, markdown yok):
 
       const systemPrompt = `Profesyonel basketbol maç analizcisisin. Türkçe yaz.`;
 
-      const userPrompt = `Maç Analizi Yaz.
+      let userPrompt = `Maç Analizi Yaz.
 
 Maç: #${gameData?.gameNumber} (${gameDate})
 Skor: A ${gameData?.teamAScore} - ${gameData?.teamBScore} B
@@ -361,15 +393,34 @@ Skor: A ${gameData?.teamAScore} - ${gameData?.teamBScore} B
 Takımlar: ${teamStatsStr}
 
 Oyuncular:
-${playerStatsStr}
+${playerStatsStr}`;
+
+      if (logContext && logContext.periodStats?.length > 0) {
+        const pct = (m: number, a: number) => a > 0 ? `${((m / a) * 100).toFixed(0)}%` : '-';
+        const fmtPlayer = (p: PlayerPeriodStats) =>
+          `${p.playerNickname}:${p.points}p,${p.totalRebounds}r,${p.assists}a,2P:${p.twoPointMade}/${p.twoPointAttempts}(${pct(p.twoPointMade, p.twoPointAttempts)}),3P:${p.threePointMade}/${p.threePointAttempts}(${pct(p.threePointMade, p.threePointAttempts)})`;
+
+        const periodSummary = logContext.periodStats.map(ps => {
+          const aLine = ps.teamA.map(fmtPlayer).join(' | ');
+          const bLine = ps.teamB.map(fmtPlayer).join(' | ');
+          const aTotal = ps.teamA.reduce((s, p) => s + p.points, 0);
+          const bTotal = ps.teamB.reduce((s, p) => s + p.points, 0);
+          return `${ps.period} (A:${aTotal} - B:${bTotal})\n  A: ${aLine}\n  B: ${bLine}`;
+        }).join('\n\n');
+
+        userPrompt += `\n\nPERİYOT BAZLI İSTATİSTİKLER:\n${periodSummary}`;
+      }
+
+      userPrompt += `
 
 Markdown formatında yaz. Başlıklar:
 1. Maç Özeti (1-2 paragraf)
-2. Öne Çıkan Oyuncular (2-3 kişi, MVP seç)
-3. Takım Değerlendirmesi
-4. Stratejik Notlar (2 madde)
+2. Periyot Analizi${logContext?.periodStats?.length ? ' (her periyot için momentum ve öne çıkan oyuncular)' : ''}
+3. Öne Çıkan Oyuncular (2-3 kişi, MVP seç)
+4. Takım Değerlendirmesi (ribaund hakimiyeti, şut verimliliği)
+5. Stratejik Notlar (2 madde)
 
-Max 400 kelime. Verilere dayan.`;
+Max ${logContext ? 600 : 400} kelime. Verilere dayan.`;
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -378,7 +429,7 @@ Max 400 kelime. Verilere dayan.`;
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.6,
-        max_tokens: 800,
+        max_tokens: logContext ? 1200 : 800,
       });
 
       const analysis = completion.choices[0]?.message?.content;

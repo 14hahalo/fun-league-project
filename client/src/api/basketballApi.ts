@@ -13,6 +13,7 @@ import type {
   CreateVideoDto,
   UpdateVideoDto,
 } from '../types/basketball.types';
+import type { MatchLogContext } from '../types/matchLog.types';
 
 /**
  * Basketbol API modülü - Cache-Aside pattern kullanılarak optimize edilmiştir.
@@ -289,8 +290,8 @@ export const gameApi = {
    * Analiz; oyuncu performansları, takım karşılaştırması ve öne çıkan istatistikleri içerir.
    * İşlem async olduğundan response'ta güncellenmiş Game objesi döner.
    */
-  async generateAnalysis(id: string): Promise<Game> {
-    const response = await apiClient.post(`/games/${id}/generate-analysis`);
+  async generateAnalysis(id: string, logContext?: MatchLogContext): Promise<Game> {
+    const response = await apiClient.post(`/games/${id}/generate-analysis`, logContext ? { logContext } : {});
     cache.invalidate(CacheKeys.game(id));
     return response.data.data;
   },
@@ -299,6 +300,35 @@ export const gameApi = {
 export const comparisonLogApi = {
   async log(playerAName: string, playerBName: string): Promise<void> {
     await apiClient.post('/comparison-logs', { playerAName, playerBName });
+  },
+};
+
+export interface StoredEventLog {
+  id: string;
+  gameId: string;
+  events: { period: string; actor: string; event: string }[];
+  playerTeams: Record<string, 'TEAM_A' | 'TEAM_B'>;
+  createdAt: string;
+}
+
+export const matchEventLogApi = {
+  async save(
+    gameId: string,
+    events: { period: string; actor: string; event: string }[],
+    playerTeams: Record<string, 'TEAM_A' | 'TEAM_B'>
+  ): Promise<StoredEventLog> {
+    const response = await apiClient.post('/match-event-logs', { gameId, events, playerTeams });
+    return response.data.data;
+  },
+
+  async getByGameId(gameId: string): Promise<StoredEventLog | null> {
+    try {
+      const response = await apiClient.get(`/match-event-logs/game/${gameId}`);
+      return response.data.data;
+    } catch (err: any) {
+      if (err?.response?.status === 404) return null;
+      throw err;
+    }
   },
 };
 

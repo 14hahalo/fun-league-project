@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { gameApi, teamApi, playerStatsApi, teamStatsApi, videoApi } from '../api/basketballApi';
+import { gameApi, teamApi, playerStatsApi, teamStatsApi, videoApi, matchEventLogApi } from '../api/basketballApi';
 import type { MatchStatsData } from '../components/admin/AddMatchStatsModal';
 import type { EditMatchStatsData } from '../components/admin/EditMatchStatsModal';
 
@@ -65,8 +65,19 @@ export const useMatchStats = () => {
       });
 
       try {
-        await gameApi.generateAnalysis(game.id);
+        await gameApi.generateAnalysis(game.id, matchData.logContext);
       } catch (err) {
+      }
+
+      if (matchData.logContext) {
+        const playerTeams: Record<string, 'TEAM_A' | 'TEAM_B'> = {};
+        for (const p of matchData.logContext.totalStats.teamA) {
+          playerTeams[p.playerNickname] = 'TEAM_A';
+        }
+        for (const p of matchData.logContext.totalStats.teamB) {
+          playerTeams[p.playerNickname] = 'TEAM_B';
+        }
+        matchEventLogApi.save(game.id, matchData.logContext.events, playerTeams).catch(() => {});
       }
 
       if (matchData.videos && matchData.videos.length > 0) {

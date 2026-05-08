@@ -124,7 +124,8 @@ export const gameController = {
   async generateAnalysis(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const game = await gameService.generateAnalysis(id);
+      const logContext = req.body?.logContext ?? undefined;
+      const game = await gameService.generateAnalysis(id, logContext);
 
       res.status(200).json({
         success: true,

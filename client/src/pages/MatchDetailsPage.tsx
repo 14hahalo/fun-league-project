@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMatchDetails, type PlayerStatsWithInfo } from '../hooks/useMatchDetails';
 import { Loading } from '../components/shared/Loading';
 import { VideoGallery } from '../components/shared/VideoGallery';
-import { videoApi } from '../api/basketballApi';
+import { videoApi, matchEventLogApi, type StoredEventLog } from '../api/basketballApi';
 import type { TeamStats, Video } from '../types/basketball.types';
 // [VOTING DISABLED] import { PlayerRatingModal } from '../components/visitor/PlayerRatingModal';
 // [VOTING DISABLED] import { PlayerRatingsListModal } from '../components/visitor/PlayerRatingsListModal';
@@ -11,6 +11,8 @@ import { PlayerDetailsModal } from '../components/visitor/PlayerDetailsModal';
 // [VOTING DISABLED] import { useRatings } from '../hooks/useRatings';
 import ReactMarkdown from 'react-markdown';
 import type { Player } from '../types/player.types';
+import { ScoreMomentumChart } from '../components/shared/ScoreMomentumChart';
+import { StatLeadersChart } from '../components/shared/StatLeadersChart';
 
 interface AwardWinner {
   player: PlayerStatsWithInfo;
@@ -22,9 +24,11 @@ export const MatchDetailsPage = () => {
   const navigate = useNavigate();
   const { matchDetails, loading, error, fetchMatchDetails } = useMatchDetails();
   // [VOTING DISABLED] const { gameRatings, fetchGameRatings } = useRatings();
+  const [activeTab, setActiveTab] = useState<'summary' | 'boxscore' | 'charts' | 'ai' | 'videos'>('summary');
   const [showTeamB, setShowTeamB] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
+  const [eventLog, setEventLog] = useState<StoredEventLog | null>(null);
   // [VOTING DISABLED] const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   // [VOTING DISABLED] const [isRatingsListModalOpen, setIsRatingsListModalOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -33,6 +37,7 @@ export const MatchDetailsPage = () => {
     if (gameId) {
       fetchMatchDetails(gameId);
       fetchVideos(gameId);
+      matchEventLogApi.getByGameId(gameId).then(setEventLog).catch(() => {});
       // [VOTING DISABLED] fetchGameRatings(gameId).catch(err => {
       //   console.error('[MatchDetailsPage] Error fetching game ratings:', err);
       // });
@@ -401,54 +406,53 @@ export const MatchDetailsPage = () => {
   const allPlayers = [...teamAPlayers, ...teamBPlayers];
   const awards = getAwardWinners(allPlayers);
 
+  const TABS = [
+    { key: 'summary',  label: 'Özet & Ödüller', shortLabel: 'Özet',   icon: '🌟' },
+    { key: 'boxscore', label: 'Boxscore',        shortLabel: 'Tablo',    icon: '📊' },
+    { key: 'charts',   label: 'Grafikler',       shortLabel: 'Grafik', icon: '📈' },
+    { key: 'ai',       label: 'AI Analiz',       shortLabel: 'AI',     icon: '🤖' },
+    { key: 'videos',   label: 'Videolar',        shortLabel: 'Video',  icon: '🎥' },
+  ] as const;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-8">
+
+        {/* Score header — always visible */}
+        <div className="mb-6">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 rounded-3xl blur opacity-40 group-hover:opacity-60 transition duration-300"></div>
             <div className="relative bg-gradient-to-br from-gray-900 via-orange-900/30 to-gray-900 rounded-3xl p-4 md:p-10 shadow-2xl border border-orange-500/30">
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 mb-4 md:mb-8 text-center">
                 <span className="text-3xl md:text-6xl animate-pulse">🏀</span>
                 <h1 className="text-xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-orange-400 to-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]">
-                  MAÇ #{game.gameNumber} - {formatDate(game.date)}
+                  MAÇ #{game.gameNumber} — {formatDate(game.date)}
                 </h1>
               </div>
-
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-red-500/10 rounded-2xl blur-xl"></div>
                 <div className="relative bg-black/40 backdrop-blur-md rounded-2xl p-4 md:p-8 border border-orange-500/20">
                   <div className="flex items-center justify-center gap-4 md:gap-12">
                     <div className="text-center flex flex-1 flex-col items-center">
-                      <div className="text-xs md:text-lg font-bold text-blue-300 mb-2 md:mb-3 uppercase tracking-wider md:tracking-widest">
-                        Team A
-                      </div>
-                      <div className="relative inline-block mb-2 md:mb-4">
-                        <div className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-300 to-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-                          {game.teamAScore}
-                        </div>
+                      <div className="text-xs md:text-lg font-bold text-blue-300 mb-2 md:mb-3 uppercase tracking-wider md:tracking-widest">Team A</div>
+                      <div className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-300 to-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)] mb-2 md:mb-4">
+                        {game.teamAScore}
                       </div>
                       {game.teamAScore > game.teamBScore && (
-                        <div className="mt-auto inline-flex items-center gap-1 md:gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 px-2 md:px-6 py-1 md:py-2 rounded-full text-xs md:text-base font-black uppercase tracking-wider shadow-lg shadow-yellow-500/50 animate-pulse">
-                          <span className="text-base md:text-2xl">🏆</span>
-                          <span>Kazanan</span>
+                        <div className="inline-flex items-center gap-1 md:gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 px-2 md:px-6 py-1 md:py-2 rounded-full text-xs md:text-base font-black uppercase tracking-wider shadow-lg shadow-yellow-500/50 animate-pulse">
+                          <span className="text-base md:text-2xl">🏆</span><span>Kazanan</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-center">
-                      <div className="text-xl md:text-4xl font-black text-orange-400 opacity-50 px-2 md:px-6">VS</div>
-                    </div>
+                    <div className="text-xl md:text-4xl font-black text-orange-400 opacity-50 px-2 md:px-6">VS</div>
                     <div className="text-center flex flex-1 flex-col items-center">
                       <div className="text-xs md:text-lg font-bold text-red-300 mb-2 md:mb-3 uppercase tracking-wider md:tracking-widest">Team B</div>
-                      <div className="relative inline-block mb-2 md:mb-4">
-                        <div className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-red-300 to-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">
-                          {game.teamBScore}
-                        </div>
+                      <div className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-red-300 to-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.5)] mb-2 md:mb-4">
+                        {game.teamBScore}
                       </div>
                       {game.teamBScore > game.teamAScore && (
-                        <div className="mt-auto inline-flex items-center gap-1 md:gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 px-2 md:px-6 py-1 md:py-2 rounded-full text-xs md:text-base font-black uppercase tracking-wider shadow-lg shadow-yellow-500/50 animate-pulse">
-                          <span className="text-base md:text-2xl">🏆</span>
-                          <span>Kazanan</span>
+                        <div className="inline-flex items-center gap-1 md:gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 px-2 md:px-6 py-1 md:py-2 rounded-full text-xs md:text-base font-black uppercase tracking-wider shadow-lg shadow-yellow-500/50 animate-pulse">
+                          <span className="text-base md:text-2xl">🏆</span><span>Kazanan</span>
                         </div>
                       )}
                     </div>
@@ -459,293 +463,224 @@ export const MatchDetailsPage = () => {
           </div>
         </div>
 
-        {awards && (
-          <div className="mb-12">
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-500 mb-10 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
-              🌟 Maç Ödülleri 🌟
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {renderAwardCard(
-                'Efficiency King',
-                '👑',
-                awards.mvp,
-                '',
-                'bg-gradient-to-br from-purple-500 to-purple-700'
-              )}
-              {renderAwardCard(
-                'Scoring Machine',
-                '🔥',
-                awards.topScorer,
-                ' pts',
-                'bg-gradient-to-br from-red-500 to-red-700'
-              )}
-              {renderAwardCard(
-                'Board Boss',
-                '💪',
-                awards.reboundKing,
-                ' reb',
-                'bg-gradient-to-br from-blue-500 to-blue-700'
-              )}
-              {renderAwardCard(
-                'Dime Dealer',
-                '🎯',
-                awards.assistMaster,
-                ' ast',
-                'bg-gradient-to-br from-green-500 to-green-700'
-              )}
+        {/* Tab bar */}
+        <div className="mb-6">
+          <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700/50 p-1.5 shadow-xl">
+
+            {/* ── Mobile: all 5 tabs visible, icon + short label ── */}
+            <div className="flex md:hidden gap-1">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 px-1 rounded-xl font-bold transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/40'
+                      : 'text-gray-500 active:bg-gray-800/60'
+                  }`}
+                >
+                  <span className="text-lg leading-none">{tab.icon}</span>
+                  <span className="text-[9px] leading-tight font-bold tracking-wide">{tab.shortLabel}</span>
+                  {activeTab === tab.key && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-white/60 rounded-full" />
+                  )}
+                </button>
+              ))}
             </div>
+
+            {/* ── Desktop: scrollable pill bar (unchanged) ── */}
+            <div className="hidden md:flex gap-1 min-w-max overflow-x-auto scrollbar-hide">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`relative flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 whitespace-nowrap ${
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/40 scale-[1.02]'
+                      : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800/80'
+                  }`}
+                >
+                  <span className="text-base">{tab.icon}</span>
+                  <span className="tracking-wide">{tab.label}</span>
+                  {activeTab === tab.key && (
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-white/60 rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── Tab: Summary & Awards ── */}
+        {activeTab === 'summary' && (
+          <div className="space-y-10">
+            {awards && (
+              <div>
+                <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-500 mb-8 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+                  🌟 Maç Ödülleri 🌟
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {renderAwardCard('Efficiency King', '👑', awards.mvp, '', 'bg-gradient-to-br from-purple-500 to-purple-700')}
+                  {renderAwardCard('Scoring Machine', '🔥', awards.topScorer, ' pts', 'bg-gradient-to-br from-red-500 to-red-700')}
+                  {renderAwardCard('Board Boss', '💪', awards.reboundKing, ' reb', 'bg-gradient-to-br from-blue-500 to-blue-700')}
+                  {renderAwardCard('Dime Dealer', '🎯', awards.assistMaster, ' ast', 'bg-gradient-to-br from-green-500 to-green-700')}
+                </div>
+              </div>
+            )}
+
+            {game.notes && (
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 shadow-2xl border border-blue-500/30">
+                  <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500 mb-4 flex items-center gap-3 uppercase tracking-wider">
+                    <span className="text-3xl">📝</span> Notlar
+                  </h3>
+                  <p className="text-gray-200 text-lg leading-relaxed font-medium">{game.notes}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* [VOTING DISABLED]
-        {gameRatings && (
-          <div className="mb-12">
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-red-400 to-orange-400 mb-10 text-center uppercase tracking-wider drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]">
-              ❤️ Taraftar Oylaması ❤️
-            </h2>
-            <div className="max-w-md mx-auto">
+        {/* ── Tab: Boxscore ── */}
+        {activeTab === 'boxscore' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-center">
               <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 rounded-3xl blur opacity-50 group-hover:opacity-75 transition duration-300"></div>
-                <div className="relative bg-gradient-to-br from-pink-600 via-red-600 to-orange-600 rounded-3xl p-10 shadow-2xl border border-white/20">
-                  <div className="text-center">
-                    <div className="text-7xl mb-6 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">❤️</div>
-                    {gameRatings.mvp ? (
-                      <>
-                        <h3 className="text-white text-3xl font-black mb-4 uppercase tracking-widest drop-shadow-lg">
-                          GÖNÜLLERİN MVPsi
-                        </h3>
-                        <div className="bg-black/30 backdrop-blur-md rounded-2xl p-5 mb-4 border border-white/30">
-                          <p className="text-white text-3xl font-black drop-shadow-lg">
-                            {gameRatings.mvp.playerName}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-center gap-4 mb-4">
-                          <div className="bg-white rounded-full px-6 py-4 shadow-lg">
-                            <div className="flex items-center gap-3">
-                              <span className="text-4xl">⭐</span>
-                              <span className="text-4xl font-black bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">
-                                {(gameRatings.mvp.averageRating ?? 0).toFixed(1)}
-                              </span>
-                              <span className="text-xl text-gray-600 font-black">/10</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-white text-base font-bold opacity-90 mb-3">
-                          {gameRatings.mvp.totalVotes} oyuncu tarafından oylandı
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="text-white text-2xl font-black mb-4 uppercase tracking-widest drop-shadow-lg">
-                          Henüz Oy Kullanılmadı
-                        </h3>
-                        <p className="text-white/80 text-lg mb-4">
-                          Bu maç için henüz oyuncu oylaması yapılmamış.
-                        </p>
-                      </>
-                    )}
-                    <div className="pt-4 border-t border-white/30 text-white text-sm font-semibold opacity-80">
-                      {gameRatings.totalVoters} / {gameRatings.totalPlayers} oyuncu oy kullandı
-                    </div>
-                    {gameRatings.ratings && gameRatings.ratings.length > 0 && (
-                      <button
-                        onClick={() => setIsRatingsListModalOpen(true)}
-                        className="mt-6 w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold py-3 px-6 rounded-xl transition-all border border-white/30 flex items-center justify-center gap-2 group"
-                      >
-                        <span>Tüm Sıralamayı Gör</span>
-                        <svg
-                          className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </button>
-                    )}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 shadow-xl border border-orange-500/30">
+                  <div className="flex items-center gap-6">
+                    <span className={`text-lg font-black transition-all uppercase tracking-wider ${!showTeamB ? 'text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'text-gray-500'}`}>
+                      🔵 Team A
+                    </span>
+                    <button
+                      onClick={() => setShowTeamB(!showTeamB)}
+                      className={`relative inline-flex h-10 w-20 items-center rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-orange-500/50 shadow-lg ${showTeamB ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'}`}
+                    >
+                      <span className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-xl transition-transform ${showTeamB ? 'translate-x-11' : 'translate-x-1'}`} />
+                    </button>
+                    <span className={`text-lg font-black transition-all uppercase tracking-wider ${showTeamB ? 'text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'text-gray-500'}`}>
+                      🔴 Team B
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
+            {!showTeamB
+              ? renderPlayerStats(teamAPlayers, teamAStats, 'Team A', '🔵')
+              : renderPlayerStats(teamBPlayers, teamBStats, 'Team B', '🔴')}
           </div>
         )}
 
-        <div className="mb-12 flex justify-center">
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-300"></div>
-            <button
-              onClick={() => setIsRatingModalOpen(true)}
-              className="relative bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white font-black py-5 px-10 rounded-2xl shadow-2xl transition-all transform hover:scale-110 flex items-center gap-4 text-xl border border-white/20"
-            >
-              <span className="text-3xl drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">⭐</span>
-              <span className="uppercase tracking-wider drop-shadow-lg">Oyuncuları Oyla</span>
-              <span className="text-3xl drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">❤️</span>
-            </button>
-          </div>
-        </div>
-        */}
+        {/* ── Tab: Charts ── */}
+        {activeTab === 'charts' && (
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
 
-        <div className="mb-8 flex items-center justify-center gap-6">
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 shadow-xl border border-orange-500/30">
-              <div className="flex items-center gap-6">
-                <span
-                  className={`text-xl font-black transition-all uppercase tracking-wider ${!showTeamB ? 'text-blue-400 scale-110 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'text-gray-500'
-                    }`}
-                >
-                  🔵 Team A
-                </span>
-                <button
-                  onClick={() => setShowTeamB(!showTeamB)}
-                  className={`relative inline-flex h-10 w-20 items-center rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-orange-500/50 ${showTeamB ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'
-                    } shadow-lg`}
-                >
-                  <span
-                    className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-xl transition-transform ${showTeamB ? 'translate-x-11' : 'translate-x-1'
-                      }`}
-                  />
-                </button>
-                <span
-                  className={`text-xl font-black transition-all uppercase tracking-wider ${showTeamB ? 'text-red-400 scale-110 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'text-gray-500'
-                    }`}
-                >
-                  🔴 Team B
-                </span>
+            {/* Stat Leaders — left / top */}
+            {allPlayers.length > 0 && (
+              <div className="relative group flex-1 min-w-0 self-stretch">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-orange-500 to-red-500 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full">
+                  <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <span>🏅</span> İstatistik Liderleri
+                  </h2>
+                  <StatLeadersChart teamAPlayers={teamAPlayers} teamBPlayers={teamBPlayers} />
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-        <div className="mb-8">
-          {!showTeamB
-            ? renderPlayerStats(teamAPlayers, teamAStats, 'Team A', '🔵')
-            : renderPlayerStats(teamBPlayers, teamBStats, 'Team B', '🔴')}
-        </div>
+            {/* Score Momentum — right / bottom */}
+            {eventLog && eventLog.events.length > 0 ? (
+              <div className="relative group flex-1 min-w-0 self-stretch">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-red-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full flex flex-col">
+                  <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-2 flex items-center gap-2 uppercase tracking-wider">
+                    Skor Momentum
+                  </h2>
+                  <div className="flex gap-4 mb-3 text-xs text-gray-400">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span>Team A önde</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>Team B önde</span>
+                  </div>
+                  <div className="flex-1 min-h-0 flex items-center justify-center">
+                    <div className="w-full">
+                      <ScoreMomentumChart events={eventLog.events} playerTeams={eventLog.playerTeams} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              allPlayers.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 text-center flex-1">
+                  <div className="text-6xl mb-4 opacity-30">📈</div>
+                  <p className="text-gray-500 text-lg font-semibold">Bu maç için event log kaydı bulunamadı.</p>
+                  <p className="text-gray-600 text-sm mt-2">Skor Momentum grafiği yalnızca Log Yöntemi ile eklenen maçlarda gösterilir.</p>
+                </div>
+              )
+            )}
 
-        <div className="mb-8">
-          {videosLoading ? (
-            <div className="py-12">
-              <Loading />
-            </div>
-          ) : (
-            <VideoGallery
-              videos={videos}
-              title="🎥 Maç Videoları"
-              emptyMessage="Bu maça ait video eklenmemiş"
-            />
-          )}
-        </div>
-
-        {game.aiAnalysis && (
-          <div className="mb-8 relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-8 shadow-[0_0_30px_-5px_rgba(168,85,247,0.4)] border border-purple-500/20">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="text-4xl">🤖</div>
-                <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400">
-                  AI Maç Analizi
-                </h3>
-              </div>
-              <div className="prose prose-invert prose-lg max-w-none">
-                <ReactMarkdown
-                  components={{
-                    h1: ({ children }: any) => (
-                      <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-4 mt-8">
-                        {children}
-                      </h1>
-                    ),
-                    h2: ({ children }: any) => (
-                      <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 mb-3 mt-6">
-                        {children}
-                      </h2>
-                    ),
-                    h3: ({ children }: any) => (
-                      <h3 className="text-xl font-semibold text-cyan-300 mb-2 mt-4">
-                        {children}
-                      </h3>
-                    ),
-                    p: ({ children }: any) => (
-                      <p className="text-gray-300 leading-relaxed mb-4">
-                        {children}
-                      </p>
-                    ),
-                    ul: ({ children }: any) => (
-                      <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4">
-                        {children}
-                      </ul>
-                    ),
-                    ol: ({ children }: any) => (
-                      <ol className="list-decimal list-inside text-gray-300 space-y-2 mb-4">
-                        {children}
-                      </ol>
-                    ),
-                    li: ({ children }: any) => (
-                      <li className="text-gray-300 ml-4">
-                        {children}
-                      </li>
-                    ),
-                    strong: ({ children }: any) => (
-                      <strong className="text-orange-400 font-bold">
-                        {children}
-                      </strong>
-                    ),
-                  }}
-                >
-                  {game.aiAnalysis}
-                </ReactMarkdown>
-              </div>
-              <div className="mt-6 pt-6 border-t border-purple-500/20">
-                <p className="text-xs text-gray-500 text-center italic">
-                  Bu analiz OpenAI tarafından otomatik olarak oluşturulmuştur
-                </p>
-              </div>
-            </div>
           </div>
         )}
 
-        {game.notes && (
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 shadow-2xl border border-blue-500/30">
-              <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500 mb-4 flex items-center gap-3 uppercase tracking-wider">
-                <span className="text-4xl">📝</span> Notlar
-              </h3>
-              <p className="text-gray-200 text-lg leading-relaxed font-medium">{game.notes}</p>
-            </div>
+        {/* ── Tab: AI Analysis ── */}
+        {activeTab === 'ai' && (
+          <div>
+            {game.aiAnalysis ? (
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-8 shadow-[0_0_30px_-5px_rgba(168,85,247,0.4)] border border-purple-500/20">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="text-4xl">🤖</div>
+                    <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400">
+                      AI Maç Analizi
+                    </h3>
+                  </div>
+                  <div className="prose prose-invert prose-lg max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }: any) => <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-4 mt-8">{children}</h1>,
+                        h2: ({ children }: any) => <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 mb-3 mt-6">{children}</h2>,
+                        h3: ({ children }: any) => <h3 className="text-xl font-semibold text-cyan-300 mb-2 mt-4">{children}</h3>,
+                        p: ({ children }: any) => <p className="text-gray-300 leading-relaxed mb-4">{children}</p>,
+                        ul: ({ children }: any) => <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4">{children}</ul>,
+                        ol: ({ children }: any) => <ol className="list-decimal list-inside text-gray-300 space-y-2 mb-4">{children}</ol>,
+                        li: ({ children }: any) => <li className="text-gray-300 ml-4">{children}</li>,
+                        strong: ({ children }: any) => <strong className="text-orange-400 font-bold">{children}</strong>,
+                      }}
+                    >
+                      {game.aiAnalysis}
+                    </ReactMarkdown>
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-purple-500/20">
+                    <p className="text-xs text-gray-500 text-center italic">Bu analiz OpenAI tarafından otomatik olarak oluşturulmuştur</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="text-6xl mb-4 opacity-30">🤖</div>
+                <p className="text-gray-500 text-lg font-semibold">Bu maç için AI analizi henüz oluşturulmamış.</p>
+              </div>
+            )}
           </div>
         )}
+
+        {/* ── Tab: Videos ── */}
+        {activeTab === 'videos' && (
+          <div>
+            {videosLoading ? (
+              <div className="py-12"><Loading /></div>
+            ) : (
+              <VideoGallery
+                videos={videos}
+                title="🎥 Maç Videoları"
+                emptyMessage="Bu maça ait video eklenmemiş"
+              />
+            )}
+          </div>
+        )}
+
       </div>
-
-      {/* [VOTING DISABLED]
-      {gameId && (
-        <PlayerRatingModal
-          isOpen={isRatingModalOpen}
-          onClose={() => {
-            setIsRatingModalOpen(false);
-            if (gameId) {
-              fetchGameRatings(gameId);
-            }
-          }}
-          gameId={gameId}
-          playersInGame={allPlayers.map((stat) => ({
-            player: stat.player!,
-            stats: stat,
-          }))}
-        />
-      )}
-
-      <PlayerRatingsListModal
-        isOpen={isRatingsListModalOpen}
-        onClose={() => setIsRatingsListModalOpen(false)}
-        gameRatings={gameRatings}
-      />
-      */}
 
       {selectedPlayer && (
         <PlayerDetailsModal
