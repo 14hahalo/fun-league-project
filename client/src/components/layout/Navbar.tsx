@@ -44,6 +44,7 @@ export const Navbar = () => {
     { path: '/matches', label: 'Maçlar', icon: '🏀' },
     { path: '/players', label: 'Oyuncular', icon: '👥' },
     { path: '/statistics', label: 'İstatistikler', icon: '📊' },
+    { path: '/comparison', label: 'Karşılaştır', icon: '⚔️' },
   ];
 
   if (isAdmin) {

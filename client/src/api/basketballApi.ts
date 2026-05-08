@@ -296,6 +296,12 @@ export const gameApi = {
   },
 };
 
+export const comparisonLogApi = {
+  async log(playerAName: string, playerBName: string): Promise<void> {
+    await apiClient.post('/comparison-logs', { playerAName, playerBName });
+  },
+};
+
 /**
  * Video Yönetimi API'si
  * Videolar maçlara ve oyunculara bağlanabilir (highlight klipleri için).

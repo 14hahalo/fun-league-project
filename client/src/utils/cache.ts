@@ -7,12 +7,13 @@ interface CacheEntry<T> {
 class CacheManager {
   private memoryCache: Map<string, CacheEntry<any>> = new Map();
 
-  private readonly DEFAULT_TTL = 5 * 60 * 1000; 
-  private readonly PLAYERS_TTL = 10 * 60 * 1000; 
-  private readonly GAMES_TTL = 5 * 60 * 1000; 
-  private readonly STATS_TTL = 3 * 60 * 1000; 
-  private readonly TOP_PLAYERS_TTL = 2 * 60 * 1000; 
-  private readonly SEASONS_TTL = 30 * 60 * 1000; 
+  private readonly DEFAULT_TTL = 5 * 60 * 1000;
+  private readonly PLAYERS_TTL = 10 * 60 * 1000;
+  private readonly GAMES_TTL = 5 * 60 * 1000;
+  private readonly STATS_TTL = 3 * 60 * 1000;
+  private readonly TOP_PLAYERS_TTL = 2 * 60 * 1000;
+  private readonly SEASONS_TTL = 30 * 60 * 1000;
+  private readonly COMPARISON_TTL = 8 * 60 * 60 * 1000;
 
 
   get<T>(key: string): T | null {
@@ -82,7 +83,7 @@ class CacheManager {
   }
 
   getTTL(
-    type: "players" | "games" | "stats" | "topPlayers" | "seasons" | "default"
+    type: "players" | "games" | "stats" | "topPlayers" | "seasons" | "comparison" | "default"
   ): number {
     switch (type) {
       case "players":
@@ -95,6 +96,8 @@ class CacheManager {
         return this.TOP_PLAYERS_TTL;
       case "seasons":
         return this.SEASONS_TTL;
+      case "comparison":
+        return this.COMPARISON_TTL;
       default:
         return this.DEFAULT_TTL;
     }
@@ -117,6 +120,7 @@ export const CacheKeys = {
   videos: (gameId: string) => `videos:game:${gameId}`,
   playerVideos: (playerId: string) => `videos:player:${playerId}`,
   ratings: (gameId: string) => `ratings:game:${gameId}`,
+  playerComparison: (idA: string, idB: string) => `comparison:${[idA, idB].sort().join(':')}`,
   allSeasons: () => "seasons:all",
   activeSeason: () => "seasons:active",
   season: (id: string) => `season:${id}`,

@@ -14,6 +14,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PlayerStatsManagementPage } from './pages/PlayerStatsManagementPage';
+import { PlayerComparisonPage } from './pages/PlayerComparisonPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/players" element={<PlayersPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/comparison" element={<PlayerComparisonPage />} />
             <Route path="/game/:gameId/stats" element={<GameStatsPage />} />
             <Route path="/match/:gameId" element={<MatchDetailsPage />} />
 
