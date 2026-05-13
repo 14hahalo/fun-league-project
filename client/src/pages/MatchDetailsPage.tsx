@@ -13,6 +13,8 @@ import ReactMarkdown from 'react-markdown';
 import type { Player } from '../types/player.types';
 import { ScoreMomentumChart } from '../components/shared/ScoreMomentumChart';
 import { StatLeadersChart } from '../components/shared/StatLeadersChart';
+import { GameFlowStats } from '../components/shared/GameFlowStats';
+import { TeamComparisonChart } from '../components/shared/TeamComparisonChart';
 
 interface AwardWinner {
   player: PlayerStatsWithInfo;
@@ -529,6 +531,10 @@ export const MatchDetailsPage = () => {
               </div>
             )}
 
+            {eventLog && eventLog.events.length > 0 && (
+              <GameFlowStats events={eventLog.events} playerTeams={eventLog.playerTeams} />
+            )}
+
             {game.notes && (
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -575,48 +581,73 @@ export const MatchDetailsPage = () => {
 
         {/* ── Tab: Charts ── */}
         {activeTab === 'charts' && (
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+          <div className="flex flex-col gap-6">
 
-            {/* Stat Leaders — left / top */}
-            {allPlayers.length > 0 && (
-              <div className="relative group flex-1 min-w-0 self-stretch">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-orange-500 to-red-500 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-300"></div>
-                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full">
-                  <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                    <span>🏅</span> İstatistik Liderleri
-                  </h2>
-                  <StatLeadersChart teamAPlayers={teamAPlayers} teamBPlayers={teamBPlayers} />
-                </div>
-              </div>
-            )}
+            {/* Row 1: Stat Leaders + Score Momentum side by side */}
+            <div className="flex flex-col md:flex-row gap-6 items-stretch">
 
-            {/* Score Momentum — right / bottom */}
-            {eventLog && eventLog.events.length > 0 ? (
-              <div className="relative group flex-1 min-w-0 self-stretch">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-red-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full flex flex-col">
-                  <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-2 flex items-center gap-2 uppercase tracking-wider">
-                    Skor Momentum
-                  </h2>
-                  <div className="flex gap-4 mb-3 text-xs text-gray-400">
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span>Team A önde</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>Team B önde</span>
+              {/* Stat Leaders */}
+              {allPlayers.length > 0 && (
+                <div className="relative group flex-1 min-w-0">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-orange-500 to-red-500 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-300"></div>
+                  <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full">
+                    <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                      <span>🏅</span> İstatistik Liderleri
+                    </h2>
+                    <StatLeadersChart teamAPlayers={teamAPlayers} teamBPlayers={teamBPlayers} />
                   </div>
-                  <div className="flex-1 min-h-0 flex items-center justify-center">
-                    <div className="w-full">
-                      <ScoreMomentumChart events={eventLog.events} playerTeams={eventLog.playerTeams} />
+                </div>
+              )}
+
+              {/* Score Momentum */}
+              {eventLog && eventLog.events.length > 0 ? (
+                <div className="relative group flex-1 min-w-0">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-red-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+                  <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 shadow-2xl border border-white/10 h-full flex flex-col">
+                    <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-2 flex items-center gap-2 uppercase tracking-wider">
+                      Skor Momentum
+                    </h2>
+                    <div className="flex gap-4 mb-3 text-xs text-gray-400">
+                      <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span>Team A önde</span>
+                      <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>Team B önde</span>
+                    </div>
+                    <div className="flex-1 min-h-0 flex items-center justify-center">
+                      <div className="w-full">
+                        <ScoreMomentumChart events={eventLog.events} playerTeams={eventLog.playerTeams} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              allPlayers.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 text-center flex-1">
-                  <div className="text-6xl mb-4 opacity-30">📈</div>
-                  <p className="text-gray-500 text-lg font-semibold">Bu maç için event log kaydı bulunamadı.</p>
-                  <p className="text-gray-600 text-sm mt-2">Skor Momentum grafiği yalnızca Log Yöntemi ile eklenen maçlarda gösterilir.</p>
+              ) : (
+                allPlayers.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-24 text-center flex-1">
+                    <div className="text-6xl mb-4 opacity-30">📈</div>
+                    <p className="text-gray-500 text-lg font-semibold">Bu maç için event log kaydı bulunamadı.</p>
+                    <p className="text-gray-600 text-sm mt-2">Skor Momentum grafiği yalnızca Log Yöntemi ile eklenen maçlarda gösterilir.</p>
+                  </div>
+                )
+              )}
+
+            </div>
+
+            {/* Row 2: Team Comparison — full width */}
+            {allPlayers.length > 0 && (
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-red-500 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 shadow-2xl border border-white/10">
+                  <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-orange-400 to-red-300 mb-5 flex items-center gap-2 uppercase tracking-wider">
+                    <span>⚖️</span> Takım Karşılaştırması
+                  </h2>
+                  <TeamComparisonChart
+                    teamAPlayers={teamAPlayers}
+                    teamBPlayers={teamBPlayers}
+                    teamAName="Team A"
+                    teamBName="Team B"
+                    teamAColor="#2563eb"
+                    teamBColor="#e85d5d"
+                  />
                 </div>
-              )
+              </div>
             )}
 
           </div>

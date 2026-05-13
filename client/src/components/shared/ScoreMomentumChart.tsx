@@ -1,6 +1,7 @@
 import {
-  ComposedChart,
-  Area,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -110,22 +111,14 @@ export const ScoreMomentumChart = ({ events, playerTeams }: ScoreMomentumChartPr
   const peakB = Math.abs(Math.min(...diffs, 0));
   const maxDiff = peakA;
   const minDiff = -peakB;
-  const range = maxDiff - minDiff;
 
-  const zeroOffset = range === 0 ? 0.5 : maxDiff / range;
-  const gradientId = 'scoreMomentumGradient';
+  const teamAColor = '#3b82f6';
+  const teamBColor = '#ef4444';
 
   return (
     <div style={{ width: '100%', height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 10, right: 56, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset={`${(zeroOffset * 100).toFixed(1)}%`} stopColor="#3b82f6" stopOpacity={0.6} />
-              <stop offset={`${(zeroOffset * 100).toFixed(1)}%`} stopColor="#ef4444" stopOpacity={0.6} />
-            </linearGradient>
-          </defs>
-
+        <BarChart data={data} margin={{ top: 10, right: 56, left: 0, bottom: 0 }} barCategoryGap="10%">
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
 
           <XAxis dataKey="index" hide />
@@ -176,24 +169,15 @@ export const ScoreMomentumChart = ({ events, playerTeams }: ScoreMomentumChartPr
             />
           ))}
 
-          <Area
-            type="monotone"
-            dataKey="diff"
-            stroke="none"
-            fill={`url(#${gradientId})`}
-            isAnimationActive={false}
-          />
-
-          <Area
-            type="monotone"
-            dataKey="diff"
-            stroke="#f97316"
-            strokeWidth={2}
-            fill="none"
-            dot={false}
-            isAnimationActive={false}
-          />
-        </ComposedChart>
+          <Bar dataKey="diff" maxBarSize={16} isAnimationActive={false} radius={0}>
+            {data.map((entry, index) => (
+              <Cell
+                key={index}
+                fill={entry.diff >= 0 ? teamAColor : teamBColor}
+              />
+            ))}
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
