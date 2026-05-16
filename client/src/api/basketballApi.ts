@@ -202,6 +202,7 @@ export const teamApi = {
     teamA: string[];
     teamB: string[];
     analysis: string;
+    pairs?: { rank: number; teamA: string; teamB: string; swapReason?: string }[];
   }> {
     const response = await apiClient.post('/teams/build-balanced', { playerIds });
     return response.data.data;

@@ -9,7 +9,8 @@ interface PlayerProfile {
   badges: string[];
   gamesPlayed: number;
   avgPoints: number;
-  avgRebounds: number;
+  avgOffRebounds: number;
+  avgDefRebounds: number;
   avgAssists: number;
   twoPointPct: number;
   threePointPct: number;
@@ -47,16 +48,25 @@ interface MatchLogContext {
   totalStats: { teamA: PlayerPeriodStats[]; teamB: PlayerPeriodStats[] };
 }
 
+interface TeamBuildPair {
+  rank: number;
+  teamA: string;
+  teamB: string;
+  swapReason?: string;
+}
+
 interface TeamBuildResponse {
   teamA: string[];
   teamB: string[];
   analysis: string;
+  pairs?: TeamBuildPair[];
 }
 
 interface OpenAITeamBuildResult {
   teamA: string[];
   teamB: string[];
   analysis: string;
+  pairs?: TeamBuildPair[];
 }
 
 export class OpenAIQuotaError extends Error {
@@ -172,7 +182,7 @@ function buildPlayerDataString(players: PlayerProfile[]): string {
   return players
     .map(
       (p) =>
-        `${p.id}|${p.name}|${p.position}|${p.height}cm|${p.gamesPlayed}g|${p.avgPoints.toFixed(1)}p|${p.avgRebounds.toFixed(1)}r|${p.avgAssists.toFixed(1)}a|2P:${p.twoPointPct.toFixed(0)}%|3P:${p.threePointPct.toFixed(0)}%|${p.badges.length > 0 ? p.badges.join(',') : '-'}`
+        `${p.id} | ${p.name} | ${p.position} | ${p.height} | ${p.gamesPlayed} | ${p.avgPoints.toFixed(2)} | ${p.avgOffRebounds.toFixed(2)} | ${p.avgDefRebounds.toFixed(2)} | ${p.avgAssists.toFixed(2)} | ${p.twoPointPct.toFixed(1)} | ${p.threePointPct.toFixed(1)} | ${p.badges.length > 0 ? p.badges.join(',') : 'none'} | ${p.badges.length}`
     )
     .join('\n');
 }
@@ -214,7 +224,8 @@ export const openAIService = {
             badges: data?.badges || [],
             gamesPlayed: 0,
             avgPoints: 0,
-            avgRebounds: 0,
+            avgOffRebounds: 0,
+            avgDefRebounds: 0,
             avgAssists: 0,
             twoPointPct: 0,
             threePointPct: 0,
@@ -224,14 +235,15 @@ export const openAIService = {
         const totals = stats.reduce(
           (acc, s) => ({
             points: acc.points + (s.totalPoints || 0),
-            rebounds: acc.rebounds + (s.totalRebounds || 0),
+            offReb: acc.offReb + (s.offensiveRebounds || 0),
+            defReb: acc.defReb + (s.defensiveRebounds || 0),
             assists: acc.assists + (s.assists || 0),
             twoPM: acc.twoPM + (s.twoPointMade || 0),
             twoPA: acc.twoPA + (s.twoPointAttempts || 0),
             threePM: acc.threePM + (s.threePointMade || 0),
             threePA: acc.threePA + (s.threePointAttempts || 0),
           }),
-          { points: 0, rebounds: 0, assists: 0, twoPM: 0, twoPA: 0, threePM: 0, threePA: 0 }
+          { points: 0, offReb: 0, defReb: 0, assists: 0, twoPM: 0, twoPA: 0, threePM: 0, threePA: 0 }
         );
 
         return {
@@ -242,34 +254,96 @@ export const openAIService = {
           badges: data?.badges || [],
           gamesPlayed,
           avgPoints: totals.points / gamesPlayed,
-          avgRebounds: totals.rebounds / gamesPlayed,
+          avgOffRebounds: totals.offReb / gamesPlayed,
+          avgDefRebounds: totals.defReb / gamesPlayed,
           avgAssists: totals.assists / gamesPlayed,
           twoPointPct: totals.twoPA > 0 ? (totals.twoPM / totals.twoPA) * 100 : 0,
           threePointPct: totals.threePA > 0 ? (totals.threePM / totals.threePA) * 100 : 0,
         };
       });
 
-      const playerDataStr = buildPlayerDataString(playerProfiles);
+      // Replace real Firestore IDs with short labels so the AI can't confuse an ID with a player name
+      const labelToIdMap = new Map<string, string>();
+      const labeledProfiles = playerProfiles.map((p, i) => {
+        const label = `P${i + 1}`;
+        labelToIdMap.set(label, p.id);
+        return { ...p, id: label };
+      });
+      const playerDataStr = buildPlayerDataString(labeledProfiles);
 
+      // Fallback name map in case the AI returns a player name instead of a label
+      const validIdSet = new Set(playerIds);
       const nameToIdMap = new Map<string, string>();
       playerProfiles.forEach((p) => {
+        nameToIdMap.set(p.name.toLowerCase().replace(/\s+/g, ''), p.id);
+      });
+      playerProfiles.forEach((p) => {
         nameToIdMap.set(p.name.toLowerCase(), p.id);
-        nameToIdMap.set(p.id.toLowerCase(), p.id);
       });
 
-      const systemPrompt = `Basketbol kadro uzmanısın. Sadece JSON yanıt ver, başka metin ekleme. Markdown kullanma.`;
+      const systemPrompt = `You are a basketball roster balancing engine. Your only job is to split players into two teams as evenly as possible based on their statistics. Always respond with valid JSON only — no markdown, no explanation outside the JSON.`;
 
-      const userPrompt = `10 oyuncuyu 2 dengeli takıma ayır. Her takım 5 kişi.
+      const userPrompt = `Split the following 10 basketball players into 2 perfectly balanced teams of 5.
 
-Kriterler (önem sırasıyla): skor kapasitesi, pozisyon dengesi, boy dengesi, rozetler.
+Balancing Algorithm (follow these steps in order)
 
-OYUNCU_ID | İsim | Poz | Boy | Maç | Sayı | Rib | Ast | 2P% | 3P% | Rozetler
+Step 1 — Compute a composite score for each player: compositeScore = (avgPoints × 0.3) + (avgOffReb × 0.15) + (avgDefReb × 0.12) + (avgAssists × 0.22) + (twoPointPct × 0.10) + (threePointPct × 0.10) + (badgeCount × 0.05)
+
+For players with 0 games played, treat compositeScore as the league median (assume 1.00)
+
+Step 2 — Sort players by compositeScore descending.
+
+Step 3 — Apply snake draft assignment: Pick 1 → Team A Pick 2 → Team B Pick 3 → Team B Pick 4 → Team A Pick 5 → Team A Pick 6 → Team B Pick 7 → Team B Pick 8 → Team A Pick 9 → Team A Pick 10 → Team B
+
+Step 4 — Check position balance. Each team should have at least 1 guard (PG or SG) and 1 big (C or PF). If not, swap the lowest-impact player that fixes the imbalance between the two teams.
+
+Step 5 — Check badge distribution. If one team has more than 2 extra badges than the other, swap the badge-heaviest player with the closest compositeScore match on the other team.
+
+Step 6 — Skill archetype tagging & distribution check.
+Tag each player with their dominant archetype(s):
+
+SHOOTER: 3PPct ≥ 30
+REBOUNDER: (avgOffReb + avgDefReb) ≥ 9
+PLAYMAKER: avgAssists ≥ 4
+SCORER: avgPoints ≥ 14
+
+Then count each archetype per team. If any archetype has a 2+ difference between teams, swap the lightest-impact player carrying that archetype with the closest compositeScore match on the other team.
+
+Step 7 — Guard playmaker balance.
+If both primary playmakers (players with avgAssists ≥ 4 AND position = PG or SG) are on the same team, forcibly swap one with the closest compositeScore player on the opposing team — regardless of position.
+
+Step 8 — Three-point threat balance.
+Count players with 3PPct ≥ 30 per team. If difference ≥ 2, swap the shooter with lowest compositeScore to the other team, replacing closest compositeScore match.
+
+Player Data
+
+PLAYER_ID | Name | Position | Height | Games | AvgPoints | AvgOffReb | AvgDefReb | AvgAssists | 2PPct | 3PPct | Badges | BadgeCount
 ${playerDataStr}
 
-ÖNEMLİ: Yanıtta SADECE ilk sütundaki OYUNCU_ID değerlerini kullan. İsim kullanma!
+Rules
 
-Yanıt formatı (sadece JSON, markdown yok):
-{"teamA":["OYUNCU_ID_1","OYUNCU_ID_2","OYUNCU_ID_3","OYUNCU_ID_4","OYUNCU_ID_5"],"teamB":["OYUNCU_ID_6","OYUNCU_ID_7","OYUNCU_ID_8","OYUNCU_ID_9","OYUNCU_ID_10"],"analysis":"Kısa analiz"}`;
+Use ONLY the PLAYER_ID values from the first column in your response. Never use names.
+
+Every player must appear in exactly one team. No player can be in both or neither.
+
+teamA and teamB must each have exactly 5 players.
+
+The analysis field must include: Team A composite total, Team B composite total, and the difference.
+
+Response format (JSON only, no markdown):
+
+{ "teamA": ["P_ID", "P_ID", "P_ID", "P_ID", "P_ID"], "teamB": ["P_ID", "P_ID", "P_ID", "P_ID", "P_ID"], "pairs": [ { "rank": 1, "teamA": "P_ID (compositeScore)", "teamB": "P_ID (compositeScore)" }, { "rank": 2, "teamA": "P_ID (compositeScore)", "teamB": "P_ID (compositeScore)" }, { "rank": 3, "teamA": "P_ID (compositeScore)", "teamB": "P_ID (compositeScore)" }, { "rank": 4, "teamA": "P_ID (compositeScore)", "teamB": "P_ID (compositeScore)" }, { "rank": 5, "teamA": "P_ID (compositeScore)", "teamB": "P_ID (compositeScore)" } ], "analysis": "Team A composite: X.XX | Team B composite: X.XX | Difference: X.XX | Position balance: OK/ADJUSTED | Badge balance: OK/ADJUSTED | Archetype balance: A[Shooter:X Rebounder:X Playmaker:X Scorer:X] vs B[Shooter:X Rebounder:X Playmaker:X Scorer:X]" }
+
+Pairs field rules:
+- rank 1: Pick 1 (A) paired with Pick 2 (B)
+- rank 2: Pick 3 (B) paired with Pick 4 (A)
+- rank 3: Pick 5 (A) paired with Pick 6 (B)
+- rank 4: Pick 7 (B) paired with Pick 8 (A)
+- rank 5: Pick 9 (A) paired with Pick 10 (B)
+- Always show the stronger player of each pair first within the pair object.
+- If any swap occurred in Steps 4–8, reflect the FINAL assignment (post-swap) in pairs.
+- For every pair affected by a swap, add a "swapReason" field explaining why: "swapReason": "ADJUSTED — [reason]". Possible reasons: "Position imbalance: needed guard/big on TeamX (Step 4)", "Badge imbalance: redistributed badge-heavy player (Step 5)", "Archetype imbalance: [SHOOTER/REBOUNDER/PLAYMAKER/SCORER] clustered on TeamX (Step 6)", "Guard playmaker imbalance: both primary playmakers were on TeamX (Step 7)", "Three-point threat imbalance: shooters clustered on TeamX (Step 8)".
+- For pairs with no swap, omit the swapReason field entirely.`;
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -277,19 +351,36 @@ Yanıt formatı (sadece JSON, markdown yok):
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.3,
-        max_tokens: 400,
+        temperature: 0.0,
+        max_tokens: 1200,
         response_format: { type: 'json_object' },
       });
 
       const responseContent = completion.choices[0]?.message?.content;
       const parsed = safeParseJSON<OpenAITeamBuildResult>(responseContent);
 
+      const resolveId = (val: string): string => {
+        const trimmed = val.trim();
+        if (labelToIdMap.has(trimmed)) return labelToIdMap.get(trimmed)!;
+        if (validIdSet.has(trimmed)) return trimmed;
+        return nameToIdMap.get(trimmed.toLowerCase()) || trimmed;
+      };
+
+      const resolvePairEntry = (entry: string): string =>
+        entry.replace(/\b(P\d+)\b/g, (label) => labelToIdMap.get(label) || label);
+
       let resolvedResult: OpenAITeamBuildResult | null = null;
       if (parsed && Array.isArray(parsed.teamA) && Array.isArray(parsed.teamB)) {
-        const resolvedTeamA = parsed.teamA.map((val: string) => nameToIdMap.get(val.toLowerCase()) || val);
-        const resolvedTeamB = parsed.teamB.map((val: string) => nameToIdMap.get(val.toLowerCase()) || val);
-        resolvedResult = { teamA: resolvedTeamA, teamB: resolvedTeamB, analysis: parsed.analysis || '' };
+        const resolvedTeamA = parsed.teamA.map(resolveId);
+        const resolvedTeamB = parsed.teamB.map(resolveId);
+        const resolvedPairs = Array.isArray(parsed.pairs)
+          ? parsed.pairs.map((pair: TeamBuildPair) => ({
+              ...pair,
+              teamA: resolvePairEntry(pair.teamA),
+              teamB: resolvePairEntry(pair.teamB),
+            }))
+          : undefined;
+        resolvedResult = { teamA: resolvedTeamA, teamB: resolvedTeamB, analysis: parsed.analysis || '', pairs: resolvedPairs };
       }
 
       if (!resolvedResult || !validateTeamBuildResult(resolvedResult, playerIds)) {
@@ -299,8 +390,9 @@ Yanıt formatı (sadece JSON, markdown yok):
         const fallbackTeamA: string[] = [];
         const fallbackTeamB: string[] = [];
 
+        const snakePattern = [0, 1, 1, 0, 0, 1, 1, 0, 0, 1];
         sorted.forEach((p, i) => {
-          if (i % 2 === 0) fallbackTeamA.push(p.id);
+          if (snakePattern[i] === 0) fallbackTeamA.push(p.id);
           else fallbackTeamB.push(p.id);
         });
 
@@ -315,6 +407,7 @@ Yanıt formatı (sadece JSON, markdown yok):
         teamA: resolvedResult.teamA,
         teamB: resolvedResult.teamB,
         analysis: resolvedResult.analysis,
+        pairs: resolvedResult.pairs,
       };
     } catch (error) {
       if (

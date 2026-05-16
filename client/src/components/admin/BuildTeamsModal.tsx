@@ -16,6 +16,7 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
     teamA: string[];
     teamB: string[];
     analysis: string;
+    pairs?: { rank: number; teamA: string; teamB: string; swapReason?: string }[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +54,12 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
     } finally {
       setLoading(false);
     }
+  };
+
+  const parsePairEntry = (entry: string): { playerId: string; score: string } => {
+    const match = entry.match(/^(.+?)\s*\(([^)]+)\)$/);
+    if (match) return { playerId: match[1].trim(), score: match[2].trim() };
+    return { playerId: entry.trim(), score: '' };
   };
 
   const getPlayerName = (playerId: string) => {
@@ -206,6 +213,39 @@ export const BuildTeamsModal: React.FC<BuildTeamsModalProps> = ({ isOpen, onClos
                   </div>
                 </div>
               </div>
+
+              {result.pairs && result.pairs.length > 0 && (
+                <div className="p-6 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/50 rounded-xl">
+                  <h3 className="text-xl font-bold text-indigo-400 mb-4">🐍 Snake Draft Eşleşmeleri</h3>
+                  <div className="space-y-2">
+                    {result.pairs.map((pair) => {
+                      const a = parsePairEntry(pair.teamA);
+                      const b = parsePairEntry(pair.teamB);
+                      return (
+                        <div key={pair.rank} className="rounded-lg border border-gray-700 overflow-hidden">
+                          <div className="flex items-center gap-3 p-3 bg-gray-800/50">
+                            <span className="text-gray-500 font-bold text-sm w-5 shrink-0">#{pair.rank}</span>
+                            <div className="flex-1 flex items-center gap-2">
+                              <span className="text-blue-300 font-medium">{getPlayerName(a.playerId)}</span>
+                              {a.score && <span className="text-gray-500 text-xs">({a.score})</span>}
+                            </div>
+                            <span className="text-gray-600 text-xs font-bold">VS</span>
+                            <div className="flex-1 flex items-center gap-2 justify-end">
+                              {b.score && <span className="text-gray-500 text-xs">({b.score})</span>}
+                              <span className="text-orange-300 font-medium">{getPlayerName(b.playerId)}</span>
+                            </div>
+                          </div>
+                          {pair.swapReason && (
+                            <div className="px-3 py-1.5 bg-yellow-500/10 border-t border-yellow-500/20 text-xs text-yellow-400">
+                              🔄 {pair.swapReason}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/50 rounded-xl">
                 <h3 className="text-2xl font-bold text-purple-400 mb-4">🎯 AI Analizi</h3>

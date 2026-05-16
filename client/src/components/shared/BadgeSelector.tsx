@@ -1,5 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { PlayerBadges, Badge } from '../../types/player.types';
+
+const BADGE_DATA: Badge[] = [
+  { name: 'Akrobat',          category: 'Bitiriş',    description: 'Düşük yüzdelik şutlarda bile potaya yakın konumda etkin bitirir.' },
+  { name: 'Kontr Bitirici',   category: 'Bitiriş',    description: 'Kontr atak durumlarında üst düzey bitiriş yapar.' },
+  { name: 'Poster İmzacısı',  category: 'Bitiriş',    description: 'Rakip oyuncular üzerinden sert smaç atabilir.' },
+  { name: 'Pro Dokunuş',      category: 'Bitiriş',    description: 'Potaya yakın şutlarda yüksek isabet sağlar.' },
+  { name: 'İki El Smaç',      category: 'Bitiriş',    description: 'İki elle yapılan smaçlarda yüksek etkinlik gösterir.' },
+  { name: 'Layup Ustası',     category: 'Bitiriş',    description: 'Layup atışlarında son derece başarılı bitirir.' },
+  { name: 'Temaslı Bitirici', category: 'Bitiriş',    description: 'Temas altında bile yüksek başarı oranıyla bitirir.' },
+
+  { name: 'Keskin Nişancı',      category: 'Şut', description: 'Açık pozisyonlarda üç sayılık şutlarda yüksek isabet.' },
+  { name: 'Al-At',               category: 'Şut', description: 'Pas alır almaz hızlıca şut çekme konusunda üstün.' },
+  { name: 'Seri Atıcı',          category: 'Şut', description: 'Üst üste başarılı şutlarda isabet oranı artar.' },
+  { name: 'Orta Mesafe Ustası',  category: 'Şut', description: 'Orta mesafe şutlarında son derece etkili.' },
+  { name: 'Sıcak El',            category: 'Şut', description: 'Arka arkaya isabet sonrası şut oranı yükselir.' },
+  { name: 'Kritik Atıcı',        category: 'Şut', description: 'Kritik anlarda şut başarısı artış gösterir.' },
+  { name: 'Stres Altında Atıcı', category: 'Şut', description: 'Baskı altında bile sakin ve isabetli şut çeker.' },
+
+  { name: 'Saha Vizyonu',   category: 'Oyun Kurma', description: 'Sahayı geniş okur ve doğru pas seçimlerini yapar.' },
+  { name: 'Hızlı İlk Adım', category: 'Oyun Kurma', description: 'Rakibi geçmede ilk adımda patlayıcı hız sağlar.' },
+  { name: 'Asist Ustası',   category: 'Oyun Kurma', description: 'Takım arkadaşlarına atış fırsatı yaratan paslar atar.' },
+  { name: 'Zemin Generali', category: 'Oyun Kurma', description: 'Takımın oyununu yönlendirir ve iletişimi güçlendirir.' },
+  { name: 'Dur-Git',        category: 'Oyun Kurma', description: 'Ani duruş ve hareket değişiklikleriyle rakibi sarsar.' },
+  { name: 'Hız Artırıcı',  category: 'Oyun Kurma', description: 'Yüksek oyun kurma becerisiyle hız avantajı kazanır.' },
+  { name: 'Ayak Kıran',    category: 'Oyun Kurma', description: '1\'e 1 durumlarında rakip oyuncunun dengesini bozar.' },
+
+  { name: 'Yıldıran',      category: 'Savunma', description: 'Rakip oyuncuların şut yüzdelerini düşürür.' },
+  { name: 'Cep Hırsızı',   category: 'Savunma', description: 'Top çalmada üst düzey etkinlik gösterir.' },
+  { name: 'Kelepçe',       category: 'Savunma', description: 'Top taşıyıcıların hareket alanını ciddi ölçüde kısıtlar.' },
+  { name: 'Pota Koruyucu', category: 'Savunma', description: 'Potaya yakın bölgede atışları engeller ve blok atar.' },
+  { name: 'Tuğla Duvar',   category: 'Savunma', description: 'Ekranlar karşısında güçlü direniş gösterir.' },
+  { name: 'Sinek',         category: 'Savunma', description: 'Rakibi sürekli rahatsız eden yorucu savunma yapar.' },
+  { name: 'Faul Kartı',    category: 'Savunma', description: 'Hücum faulü almada üst düzey pozisyon alır.' },
+
+  { name: 'Cam Temizleyici',  category: 'Ribaund', description: 'Savunmada üst düzey ribaund alır.' },
+  { name: 'Hücum Rıbaundu',  category: 'Ribaund', description: 'Kaçırılan şutlarda ikinci şans pozisyonu yakalar.' },
+  { name: 'Ribaund Avcısı',  category: 'Ribaund', description: 'Savunmada pozisyon almaksızın topu kapabilir.' },
+  { name: 'Geri Dönüş Ustası', category: 'Ribaund', description: 'Kaçan topları tekrar atışa dönüştürmede yetenekli.' },
+  { name: 'Kutu Hakimi',     category: 'Ribaund', description: 'Boyasın içinde güçlü pozisyon alarak ribaund kazanır.' },
+
+  { name: 'Takım Oyuncusu',            category: 'Genel', description: 'Takımın ihtiyaçlarını kendi önüne koyar.' },
+  { name: 'Lider',                     category: 'Genel', description: 'Zor anlarda takımı motive eder ve yönlendirir.' },
+  { name: 'Tutarlı',                   category: 'Genel', description: 'Her maçta istikrarlı performans sergiler.' },
+  { name: 'Kritik Anlarda Performans', category: 'Genel', description: 'Maçın belirleyici anlarında üstün performans gösterir.' },
+  { name: 'Yorulmaz',                  category: 'Genel', description: 'Maç boyunca yüksek enerji ve tempo sürdürür.' },
+  { name: 'Tecrübeli Oyuncu',          category: 'Genel', description: 'Deneyimiyle takıma değer katıp oyunu sakinleştirir.' },
+  { name: 'Çalışkan',                  category: 'Genel', description: 'Görünmeyen katkılarla takımın istatistiklerine destek olur.' },
+];
 
 interface BadgeSelectorProps {
   selectedBadges: PlayerBadges;
@@ -12,29 +60,8 @@ export const BadgeSelector: React.FC<BadgeSelectorProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const badges = BADGE_DATA;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadBadges = async () => {
-      try {
-        const response = await fetch('/data/player-badges.json');
-        const data = await response.json();
-        setBadges(data);
-      } catch (error) {
-        console.error('Failed to load badges:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBadges();
-  }, []);
-
-  if (loading) {
-    return <div className="text-gray-400">Loading badges...</div>;
-  }
 
   const categories = ['Bitiriş', 'Şut', 'Oyun Kurma', 'Savunma', 'Ribaund', 'Genel'];
 
