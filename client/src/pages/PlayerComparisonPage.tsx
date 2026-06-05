@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePlayers } from '../hooks/usePlayers';
 import { Loading } from '../components/shared/Loading';
 import { playerStatsApi } from '../api/playerStatsApi';
@@ -243,6 +244,544 @@ const PlayerSearchDropdown: React.FC<DropdownProps> = ({ players, selected, onSe
     </div>
   );
 };
+
+// ─── Takım Değerlendirmesi types ────────────────────────────────────────────
+
+interface TeamEvalPlayerStat {
+  player: Player;
+  avgPoints: number;
+  avgRebounds: number;
+  avgAssists: number;
+  avgEfficiency: number;
+  gamesPlayed: number;
+  hasData: boolean;
+}
+
+interface TeamEvalGameRecord {
+  game: Game;
+  teamType: 'TEAM_A' | 'TEAM_B';
+  isWin: boolean;
+}
+
+interface TeamEvalResult {
+  sharedGames: TeamEvalGameRecord[];
+  playerStats: TeamEvalPlayerStat[];
+  teamWins: number;
+  teamLosses: number;
+  teamAvgPts: number;
+  teamAvgReb: number;
+  teamAvgAst: number;
+}
+
+// ─── Multi-player search dropdown ────────────────────────────────────────────
+
+interface MultiPlayerSearchProps {
+  players: Player[];
+  selected: Player[];
+  onChange: (players: Player[]) => void;
+  max: number;
+}
+
+const MultiPlayerSearch: React.FC<MultiPlayerSearchProps> = ({ players, selected, onChange, max }) => {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selectedIds = useMemo(() => new Set(selected.map(p => p.id)), [selected]);
+
+  const filtered = useMemo(() =>
+    players
+      .filter(p => !selectedIds.has(p.id))
+      .filter(p => {
+        const q = search.toLowerCase();
+        return (
+          p.nickname.toLowerCase().includes(q) ||
+          (p.firstName?.toLowerCase().includes(q) ?? false) ||
+          (p.lastName?.toLowerCase().includes(q) ?? false)
+        );
+      }),
+    [players, selectedIds, search]
+  );
+
+  const add = (p: Player) => {
+    if (selected.length >= max) return;
+    onChange([...selected, p]);
+    setSearch('');
+    setOpen(false);
+  };
+
+  const remove = (id: string) => onChange(selected.filter(p => p.id !== id));
+
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {selected.map(p => (
+            <div
+              key={p.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/40 rounded-full"
+            >
+              <div className="w-5 h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                {p.photoUrl ? (
+                  <img src={p.photoUrl} alt={p.nickname} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-300">
+                    {p.nickname.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-semibold text-purple-300">{p.nickname}</span>
+              <button
+                onClick={() => remove(p.id)}
+                className="text-purple-400 hover:text-red-400 transition-colors text-sm leading-none ml-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Search input */}
+      {selected.length < max && (
+        <div className="relative p-[1px] rounded-xl bg-gradient-to-r from-purple-500 to-violet-500">
+          <div className="bg-gray-900 rounded-xl px-4 py-3">
+            <input
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
+              placeholder={`Oyuncu ara... (${selected.length}/${max} seçildi)`}
+              className="bg-transparent text-white placeholder-gray-500 text-sm w-full focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Dropdown */}
+      {open && selected.length < max && (
+        <div className="absolute z-50 mt-1 w-full bg-gray-900 border border-purple-500/30 rounded-xl shadow-2xl max-h-56 overflow-y-auto custom-scrollbar">
+          {filtered.length === 0 ? (
+            <div className="py-5 text-center text-gray-500 text-sm">Oyuncu bulunamadı</div>
+          ) : (
+            filtered.map(p => (
+              <div
+                key={p.id}
+                onClick={() => add(p)}
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-gray-800/50 last:border-0"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 overflow-hidden flex-shrink-0">
+                  {p.photoUrl ? (
+                    <img src={p.photoUrl} alt={p.nickname} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-xs">
+                      {p.nickname.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-white truncate">{p.nickname}</div>
+                  {(p.firstName || p.lastName) && (
+                    <div className="text-xs text-gray-500 truncate">{[p.firstName, p.lastName].filter(Boolean).join(' ')}</div>
+                  )}
+                </div>
+                {p.jerseyNumber !== undefined && (
+                  <span className="text-xs font-bold text-gray-500 flex-shrink-0">#{p.jerseyNumber}</span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── TeamEvaluationSection ────────────────────────────────────────────────────
+
+interface TeamEvaluationSectionProps {
+  players: Player[];
+}
+
+const TeamEvaluationSection: React.FC<TeamEvaluationSectionProps> = ({ players }) => {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<Player[]>([]);
+  const [result, setResult] = useState<TeamEvalResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [analyzed, setAnalyzed] = useState(false);
+
+  const canAnalyze = selected.length >= 2;
+
+  const reset = () => {
+    setResult(null);
+    setError(null);
+    setAnalyzed(false);
+  };
+
+  const handlePlayersChange = (players: Player[]) => {
+    setSelected(players);
+    reset();
+  };
+
+  const calcEff = (s: PlayerStats) =>
+    2 * s.twoPointMade +
+    3 * s.threePointMade +
+    1.5 * s.assists +
+    0.8 * s.defensiveRebounds +
+    1.2 * s.offensiveRebounds -
+    0.8 * (s.twoPointAttempts - s.twoPointMade) -
+    1.2 * (s.threePointAttempts - s.threePointMade);
+
+  const analyze = async () => {
+    if (!canAnalyze) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setAnalyzed(true);
+
+    try {
+      const [allGames, ...statArrays] = await Promise.all([
+        gameApi.getAllGames(),
+        ...selected.map(p => playerStatsApi.getAllStatsForPlayer(p.id)),
+      ]);
+
+      // Build per-player maps: gameId → PlayerStats
+      const playerGameMaps = statArrays.map((stats: PlayerStats[]) =>
+        new Map<string, PlayerStats>(stats.map((s: PlayerStats) => [s.gameId, s]))
+      );
+
+      // Valid games (respects countInStats)
+      const validGameMap = new Map<string, Game>(
+        (allGames as Game[])
+          .filter(g => g.countInStats !== false)
+          .map(g => [g.id, g])
+      );
+
+      // Find games where ALL selected players played on the SAME team
+      const sharedGames: TeamEvalGameRecord[] = [];
+
+      // Candidate game IDs = games played by first player
+      const candidateIds = [...playerGameMaps[0].keys()];
+
+      for (const gameId of candidateIds) {
+        if (!validGameMap.has(gameId)) continue;
+
+        // Check all players have a stat entry for this game
+        const statsForGame = playerGameMaps.map(m => m.get(gameId));
+        if (statsForGame.some(s => s === undefined)) continue;
+
+        // Check all are on the same team
+        const teamType = statsForGame[0]!.teamType;
+        if (statsForGame.some(s => s!.teamType !== teamType)) continue;
+
+        const game = validGameMap.get(gameId)!;
+        const isWin = teamType === 'TEAM_A'
+          ? game.teamAScore > game.teamBScore
+          : game.teamBScore > game.teamAScore;
+
+        sharedGames.push({ game, teamType, isWin });
+      }
+
+      // Sort by date descending
+      sharedGames.sort((a, b) => new Date(b.game.date).getTime() - new Date(a.game.date).getTime());
+
+      const n = sharedGames.length;
+
+      // Per-player aggregated stats across shared games
+      const playerStats: TeamEvalPlayerStat[] = selected.map((player, idx) => {
+        const sharedStats = sharedGames.map(({ game }) => playerGameMaps[idx].get(game.id)!);
+        if (sharedStats.length === 0) {
+          return { player, avgPoints: 0, avgRebounds: 0, avgAssists: 0, avgEfficiency: 0, gamesPlayed: 0, hasData: false };
+        }
+        const pts = sharedStats.reduce((s, st) => s + st.totalPoints, 0);
+        const reb = sharedStats.reduce((s, st) => s + st.totalRebounds, 0);
+        const ast = sharedStats.reduce((s, st) => s + st.assists, 0);
+        const eff = sharedStats.reduce((s, st) => s + calcEff(st), 0);
+        return {
+          player,
+          avgPoints: pts / n,
+          avgRebounds: reb / n,
+          avgAssists: ast / n,
+          avgEfficiency: eff / n,
+          gamesPlayed: n,
+          hasData: true,
+        };
+      });
+
+      // Team-level averages (sum across all players per game)
+      let teamTotalPts = 0, teamTotalReb = 0, teamTotalAst = 0;
+      for (const { game } of sharedGames) {
+        for (const pm of playerGameMaps) {
+          const s = pm.get(game.id)!;
+          teamTotalPts += s.totalPoints;
+          teamTotalReb += s.totalRebounds;
+          teamTotalAst += s.assists;
+        }
+      }
+
+      const wins = sharedGames.filter(g => g.isWin).length;
+
+      setResult({
+        sharedGames,
+        playerStats,
+        teamWins: wins,
+        teamLosses: n - wins,
+        teamAvgPts: n > 0 ? teamTotalPts / n : 0,
+        teamAvgReb: n > 0 ? teamTotalReb / n : 0,
+        teamAvgAst: n > 0 ? teamTotalAst / n : 0,
+      });
+    } catch {
+      setError('Veriler yüklenirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const winPct = result && result.sharedGames.length > 0
+    ? Math.round((result.teamWins / result.sharedGames.length) * 100)
+    : 0;
+
+  return (
+    <div className="mt-16">
+      {/* Divider */}
+      <div className="relative mb-10">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-700/60" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-gray-900 px-4 text-xs font-bold uppercase tracking-widest text-gray-600">
+            ayrı bölüm
+          </span>
+        </div>
+      </div>
+
+      {/* Section header */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-violet-400 to-fuchsia-400 mb-2 tracking-tight">
+          🏀 Takım Değerlendirmesi
+        </h2>
+        <p className="text-sm text-gray-500">
+          2–5 oyuncu seç · Aynı takımda oynadıkları maçların istatistiklerini gör
+        </p>
+      </div>
+
+      {/* Player selection panel */}
+      <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 mb-6">
+        <div className="bg-gray-900 rounded-2xl px-4 py-6 md:px-8">
+          <MultiPlayerSearch
+            players={players}
+            selected={selected}
+            onChange={handlePlayersChange}
+            max={5}
+          />
+
+          <div className="mt-5 flex items-center justify-between flex-wrap gap-3">
+            <p className="text-xs text-gray-500">
+              {selected.length < 2
+                ? `En az ${2 - selected.length} oyuncu daha seç`
+                : `${selected.length} oyuncu seçildi — analize hazır`}
+            </p>
+            <button
+              onClick={analyze}
+              disabled={!canAnalyze || loading}
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                canAnalyze && !loading
+                  ? 'bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 text-white shadow-lg shadow-purple-500/20'
+                  : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+              }`}
+            >
+              {loading ? 'Analiz ediliyor...' : 'Analiz Et'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      {loading && <Loading />}
+
+      {error && (
+        <div className="text-center py-10 bg-red-500/10 rounded-2xl border border-red-500/30">
+          <p className="text-red-400 font-semibold">{error}</p>
+        </div>
+      )}
+
+      {analyzed && !loading && !error && result && result.sharedGames.length === 0 && (
+        <div className="text-center py-14 bg-gray-800/30 rounded-2xl border border-gray-700/50">
+          <div className="text-5xl mb-4">🔍</div>
+          <p className="text-lg text-gray-400 font-semibold">Bu oyuncular hiç aynı takımda oynamadı</p>
+          <p className="text-sm text-gray-600 mt-2">Seçilen tüm oyuncuların aynı anda aynı takımda göründüğü maç bulunamadı.</p>
+        </div>
+      )}
+
+      {result && result.sharedGames.length > 0 && (
+        <div className="space-y-6">
+          {/* Summary card */}
+          <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500">
+            <div className="bg-gray-900 rounded-2xl p-6">
+              <div className="flex flex-wrap gap-4 items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Birlikte Oynanan Maç</p>
+                  <p className="text-4xl font-black text-white">{result.sharedGames.length}</p>
+                  {result.sharedGames.length === 1 && (
+                    <p className="text-xs text-yellow-400 mt-1 font-semibold">Tek maç verisi</p>
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">W – L</p>
+                  <p className="text-3xl font-black">
+                    <span className="text-green-400">{result.teamWins}</span>
+                    <span className="text-gray-600 mx-1">–</span>
+                    <span className="text-red-400">{result.teamLosses}</span>
+                  </p>
+                </div>
+
+                <div className="text-center md:text-right">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Kazanma Oranı</p>
+                  <p className="text-lg font-bold text-purple-300">
+                    {result.sharedGames.length} maçın {result.teamWins}'ini kazandılar (%{winPct})
+                  </p>
+                </div>
+              </div>
+
+              {/* Team avg bar */}
+              <div className="mt-5 pt-5 border-t border-gray-800 grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Takım Ort. Sayı</p>
+                  <p className="text-xl font-black text-purple-300">{result.teamAvgPts.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Takım Ort. Rib</p>
+                  <p className="text-xl font-black text-purple-300">{result.teamAvgReb.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Takım Ort. Ast</p>
+                  <p className="text-xl font-black text-purple-300">{result.teamAvgAst.toFixed(1)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Per-player stat table */}
+          <div className="relative p-[1px] rounded-xl bg-gradient-to-br from-purple-500/60 via-violet-500/40 to-fuchsia-500/60">
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Oyuncu Performansları (ortalama / maç)</p>
+              </div>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-800/50 border-b border-gray-700">
+                      <th className="sticky left-0 z-10 bg-gray-800 px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 min-w-[120px]">Oyuncu</th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 min-w-[70px]">PTS</th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 min-w-[70px]">REB</th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 min-w-[70px]">AST</th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 min-w-[70px]">EFF</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {result.playerStats.map(ps => (
+                      <tr key={ps.player.id} className="hover:bg-purple-500/5 transition-colors">
+                        <td className="sticky left-0 z-10 bg-gray-900 px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-gray-800 border border-gray-700 overflow-hidden flex-shrink-0">
+                              {ps.player.photoUrl ? (
+                                <img src={ps.player.photoUrl} alt={ps.player.nickname} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold">
+                                  {ps.player.nickname.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-white">{ps.player.nickname}</div>
+                              <div className="text-[10px] text-gray-500">{ps.player.position || '-'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        {ps.hasData ? (
+                          <>
+                            <td className="px-4 py-3 text-center text-sm font-semibold text-gray-200">{ps.avgPoints.toFixed(1)}</td>
+                            <td className="px-4 py-3 text-center text-sm font-semibold text-gray-200">{ps.avgRebounds.toFixed(1)}</td>
+                            <td className="px-4 py-3 text-center text-sm font-semibold text-gray-200">{ps.avgAssists.toFixed(1)}</td>
+                            <td className="px-4 py-3 text-center text-sm font-semibold text-purple-300">{ps.avgEfficiency.toFixed(1)}</td>
+                          </>
+                        ) : (
+                          <td colSpan={4} className="px-4 py-3 text-center text-xs text-gray-600">Veri yok</td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Match list */}
+          <div className="relative p-[1px] rounded-xl bg-gradient-to-br from-purple-500/60 via-violet-500/40 to-fuchsia-500/60">
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Maç Listesi</p>
+              </div>
+              <div className="divide-y divide-gray-800/50">
+                {result.sharedGames.map(({ game, teamType, isWin }) => {
+                  const opponentScore = teamType === 'TEAM_A' ? game.teamBScore : game.teamAScore;
+                  const ownScore = teamType === 'TEAM_A' ? game.teamAScore : game.teamBScore;
+                  return (
+                    <button
+                      key={game.id}
+                      onClick={() => navigate(`/match/${game.id}`)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-purple-500/8 transition-colors text-left group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${
+                          isWin ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {isWin ? 'W' : 'L'}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">Maç #{game.gameNumber}</p>
+                          <p className="text-[11px] text-gray-500">
+                            {new Date(game.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {game.teamSize ? ` · ${game.teamSize}v${game.teamSize}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="text-right">
+                          <p className="text-sm font-black text-white">
+                            <span className={isWin ? 'text-green-400' : 'text-red-400'}>{ownScore}</span>
+                            <span className="text-gray-600 mx-1">–</span>
+                            <span className="text-gray-400">{opponentScore}</span>
+                          </p>
+                          <p className="text-[10px] text-gray-600">{teamType === 'TEAM_A' ? 'Takım A' : 'Takım B'}</p>
+                        </div>
+                        <span className="text-gray-600 group-hover:text-purple-400 transition-colors text-sm">→</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function PlayerAvatar({ player, accent = 'orange' }: { player: Player; accent?: 'orange' | 'cyan' }) {
   const gradient = accent === 'cyan'
@@ -566,6 +1105,10 @@ export const PlayerComparisonPage = () => {
             </div>
           </>
         ) : null}
+
+        {/* ── Takım Değerlendirmesi section ── */}
+        <TeamEvaluationSection players={players} />
+
       </div>
     </div>
   );
