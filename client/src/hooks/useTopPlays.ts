@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { videoApi } from '../api/basketballApi';
+import { videoApi } from '../api/videoApi';
 import type { Video } from '../types/basketball.types';
 
 export const useTopPlays = () => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePlayers } from '../../hooks/usePlayers';
-import { teamApi } from '../../api/basketballApi';
+import { teamApi } from '../../api/teamApi';
 import ReactMarkdown from 'react-markdown';
 
 interface BuildTeamsModalProps {

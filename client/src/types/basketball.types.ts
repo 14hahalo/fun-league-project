@@ -88,6 +88,7 @@ export interface Game {
   notes?: string;
   aiAnalysis?: string;
   seasonId?: string;
+  countInStats?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

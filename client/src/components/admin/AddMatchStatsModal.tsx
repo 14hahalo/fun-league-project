@@ -20,6 +20,7 @@ export interface MatchMetadata {
   teamSize?: number;
   notes?: string;
   seasonId?: string;
+  countInStats: boolean;
 }
 
 export interface TeamPlayers {
@@ -56,6 +57,7 @@ export const AddMatchStatsModal = ({ onClose, players, onSubmit }: AddMatchStats
     date: new Date().toISOString().split('T')[0],
     notes: '',
     seasonId: undefined,
+    countInStats: true,
   });
 
   useEffect(() => {

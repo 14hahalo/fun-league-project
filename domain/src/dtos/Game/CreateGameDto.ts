@@ -7,4 +7,5 @@ export interface CreateGameDto {
   teamSize?: number;
   notes?: string;
   seasonId?: string;
+  countInStats?: boolean;
 }

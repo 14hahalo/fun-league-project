@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Player } from '../../types/player.types';
 import type { PlayerStats, Game, Video } from '../../types/basketball.types';
-import { playerStatsApi, gameApi, videoApi } from '../../api/basketballApi';
+import { playerStatsApi } from '../../api/playerStatsApi';
+import { gameApi } from '../../api/gameApi';
+import { videoApi } from '../../api/videoApi';
 import { Loading } from '../shared/Loading';
 import { VideoGallery } from '../shared/VideoGallery';
 
@@ -46,7 +48,7 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
         const statsWithGames = stats
           .map((stat) => {
             const game = gameMap.get(stat.gameId);
-            return game ? ({ ...stat, game } as PlayerStatsWithGame) : null;
+            return game && game.countInStats !== false ? ({ ...stat, game } as PlayerStatsWithGame) : null;
           })
           .filter((stat): stat is PlayerStatsWithGame => stat !== null);
 

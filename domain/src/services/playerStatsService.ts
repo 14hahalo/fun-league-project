@@ -421,8 +421,8 @@ export class PlayerStatsService {
       if (endDate) {
         const recentGames = await query.get();
         const filteredGames = recentGames.docs.filter(doc => {
-          const gameDate = doc.data().date.toDate();
-          return gameDate <= endDate;
+          const data = doc.data();
+          return data.date.toDate() <= endDate && data.countInStats !== false;
         });
         const gameIds = filteredGames.map(doc => doc.id);
 
@@ -430,7 +430,9 @@ export class PlayerStatsService {
       }
 
       const recentGames = await query.get();
-      const gameIds = recentGames.docs.map(doc => doc.id);
+      const gameIds = recentGames.docs
+        .filter(doc => doc.data().countInStats !== false)
+        .map(doc => doc.id);
 
       return await this.calculateTopPlayersFromGames(gameIds, cacheKey);
     } catch (error) {

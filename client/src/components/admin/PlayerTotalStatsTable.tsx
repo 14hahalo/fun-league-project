@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { playerStatsApi } from '../../api/basketballApi';
+import { playerStatsApi } from '../../api/playerStatsApi';
 import { Loading } from '../shared/Loading';
 import type { Player } from '../../types/player.types';
 import type { PlayerStats, Game } from '../../types/basketball.types';
@@ -88,7 +88,9 @@ export const PlayerTotalStatsTable: React.FC<PlayerTotalStatsTableProps> = ({ pl
 
       try {
         setLoading(true);
-        const gameMap = new Map<string, Game>(games.map(g => [g.id, g]));
+        const gameMap = new Map<string, Game>(
+          games.filter(g => g.countInStats !== false).map(g => [g.id, g])
+        );
         const playerIds = players.map(p => p.id);
         const bulkStats = await playerStatsApi.getBulkPlayerStats(playerIds);
 

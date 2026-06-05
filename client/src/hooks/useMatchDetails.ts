@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
-import { gameApi, teamApi, playerStatsApi, teamStatsApi } from '../api/basketballApi';
+import { gameApi } from '../api/gameApi';
+import { teamApi } from '../api/teamApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { teamStatsApi } from '../api/teamStatsApi';
 import { playerApi } from '../api/playerApi';
 import type { Game, Team, PlayerStats, TeamStats } from '../types/basketball.types';
 import type { Player } from '../types/player.types';

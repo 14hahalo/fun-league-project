@@ -13,8 +13,9 @@ export interface Game {
   teamBStatsId?: string; 
   teamSize?: number; // 3v3, 4v4, or 5v5
   notes?: string;
-  aiAnalysis?: string; 
-  seasonId?: string; 
+  aiAnalysis?: string;
+  seasonId?: string;
+  countInStats?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

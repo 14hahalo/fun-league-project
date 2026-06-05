@@ -6,7 +6,10 @@ import { Loading } from '../shared/Loading';
 import type { Player } from '../../types/player.types';
 import type { MatchMetadata, TeamPlayers, PlayerStatsInput } from './AddMatchStatsModal';
 import type { CreateVideoDto, Video } from '../../types/basketball.types';
-import { gameApi, teamApi, playerStatsApi, videoApi } from '../../api/basketballApi';
+import { gameApi } from '../../api/gameApi';
+import { teamApi } from '../../api/teamApi';
+import { playerStatsApi } from '../../api/playerStatsApi';
+import { videoApi } from '../../api/videoApi';
 
 interface EditMatchStatsModalProps {
   gameId: string;
@@ -31,6 +34,7 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
     gameNumber: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
+    countInStats: true,
   });
   const [teamPlayers, setTeamPlayers] = useState<TeamPlayers>({
     teamA: [],
@@ -83,6 +87,7 @@ export const EditMatchStatsModal = ({ gameId, onClose, players, onSubmit }: Edit
         date: new Date(game.date).toISOString().split('T')[0],
         teamSize: game.teamSize,
         notes: game.notes || '',
+        countInStats: game.countInStats !== false,
       });
 
       setTeamPlayers({

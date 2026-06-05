@@ -48,6 +48,7 @@ export const Navbar = () => {
   ];
 
   if (isAdmin) {
+    navLinks.push({ path: '/simulation', label: 'Simülasyon', icon: '🎮' });
     navLinks.push({ path: '/admin', label: 'Admin Panel', icon: '⚙️' });
   }
 

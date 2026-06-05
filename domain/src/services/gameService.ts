@@ -22,6 +22,7 @@ export const gameService = {
       teamSize: gameData.teamSize,
       notes: gameData.notes,
       seasonId: gameData.seasonId,
+      countInStats: gameData.countInStats ?? true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

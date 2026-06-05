@@ -1,7 +1,102 @@
 import { useState } from 'react';
-import { gameApi, teamApi, playerStatsApi, teamStatsApi, videoApi, matchEventLogApi } from '../api/basketballApi';
+import { gameApi } from '../api/gameApi';
+import { teamApi } from '../api/teamApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { teamStatsApi } from '../api/teamStatsApi';
+import { videoApi } from '../api/videoApi';
+import { matchEventLogApi } from '../api/matchEventLogApi';
 import type { MatchStatsData } from '../components/admin/AddMatchStatsModal';
 import type { EditMatchStatsData } from '../components/admin/EditMatchStatsModal';
+import type { Game, Team, TeamStats } from '../types/basketball.types';
+import type { MatchLogContext } from '../types/matchLog.types';
+
+async function createGameRecord(metadata: MatchStatsData['metadata']): Promise<Game> {
+  return gameApi.createGame({
+    gameNumber: metadata.gameNumber,
+    date: metadata.date,
+    status: 'COMPLETED',
+    teamSize: metadata.teamSize,
+    notes: metadata.notes,
+    seasonId: metadata.seasonId,
+    countInStats: metadata.countInStats,
+  });
+}
+
+async function createMatchTeams(
+  gameId: string,
+  teamPlayers: MatchStatsData['teamPlayers']
+): Promise<{ teamA: Team; teamB: Team }> {
+  const [teamA, teamB] = await Promise.all([
+    teamApi.createTeam({ gameId, teamType: 'TEAM_A', playerIds: teamPlayers.teamA.map((p) => p.id), teamName: 'Team A' }),
+    teamApi.createTeam({ gameId, teamType: 'TEAM_B', playerIds: teamPlayers.teamB.map((p) => p.id), teamName: 'Team B' }),
+  ]);
+  return { teamA, teamB };
+}
+
+async function createPlayerStatsForGame(
+  gameId: string,
+  playerStats: MatchStatsData['playerStats']
+): Promise<void> {
+  await Promise.all(
+    playerStats.map((s) =>
+      playerStatsApi.createPlayerStats({
+        gameId,
+        playerId: s.playerId,
+        teamType: s.teamType,
+        twoPointAttempts: s.twoPointAttempts,
+        twoPointMade: s.twoPointMade,
+        threePointAttempts: s.threePointAttempts,
+        threePointMade: s.threePointMade,
+        defensiveRebounds: s.defensiveRebounds,
+        offensiveRebounds: s.offensiveRebounds,
+        assists: s.assists,
+      })
+    )
+  );
+}
+
+async function generateAndLinkTeamStats(
+  gameId: string,
+  teamA: Team,
+  teamB: Team
+): Promise<void> {
+  const [teamAStats, teamBStats] = await Promise.all([
+    teamStatsApi.generateTeamStats(gameId, 'TEAM_A'),
+    teamStatsApi.generateTeamStats(gameId, 'TEAM_B'),
+  ]);
+  await gameApi.updateGame(gameId, {
+    teamAId: teamA.id,
+    teamBId: teamB.id,
+    teamAStatsId: teamAStats.id,
+    teamBStatsId: teamBStats.id,
+    teamAScore: teamAStats.totalPoints,
+    teamBScore: teamBStats.totalPoints,
+  });
+}
+
+function triggerAnalysisInBackground(gameId: string, logContext?: MatchLogContext): void {
+  gameApi.generateAnalysis(gameId, logContext).catch(() => {});
+}
+
+function saveEventLogInBackground(gameId: string, logContext: MatchLogContext): void {
+  const playerTeams: Record<string, 'TEAM_A' | 'TEAM_B'> = {};
+  for (const p of logContext.totalStats.teamA) playerTeams[p.playerNickname] = 'TEAM_A';
+  for (const p of logContext.totalStats.teamB) playerTeams[p.playerNickname] = 'TEAM_B';
+  matchEventLogApi.save(gameId, logContext.events, playerTeams).catch(() => {});
+}
+
+async function uploadMatchVideos(gameId: string, videos: MatchStatsData['videos']): Promise<void> {
+  if (!videos || videos.length === 0) return;
+  await Promise.all(videos.map((v) => videoApi.createVideo({ ...v, gameId })));
+}
+
+async function recalculateScores(gameId: string): Promise<{ teamAStats: TeamStats; teamBStats: TeamStats }> {
+  const [teamAStats, teamBStats] = await Promise.all([
+    teamStatsApi.recalculateTeamStats(gameId, 'TEAM_A'),
+    teamStatsApi.recalculateTeamStats(gameId, 'TEAM_B'),
+  ]);
+  return { teamAStats, teamBStats };
+}
 
 export const useMatchStats = () => {
   const [loading, setLoading] = useState(false);
@@ -10,88 +105,17 @@ export const useMatchStats = () => {
   const createMatchStats = async (matchData: MatchStatsData): Promise<void> => {
     setLoading(true);
     setError(null);
-
     try {
-      const game = await gameApi.createGame({
-        gameNumber: matchData.metadata.gameNumber,
-        date: matchData.metadata.date,
-        status: 'COMPLETED',
-        teamSize: matchData.metadata.teamSize,
-        notes: matchData.metadata.notes,
-        seasonId: matchData.metadata.seasonId,
-      });
-
-      const teamA = await teamApi.createTeam({
-        gameId: game.id,
-        teamType: 'TEAM_A',
-        playerIds: matchData.teamPlayers.teamA.map((p) => p.id),
-        teamName: 'Team A',
-      });
-
-      const teamB = await teamApi.createTeam({
-        gameId: game.id,
-        teamType: 'TEAM_B',
-        playerIds: matchData.teamPlayers.teamB.map((p) => p.id),
-        teamName: 'Team B',
-      });
-
-      const playerStatsPromises = matchData.playerStats.map((playerStat) =>
-        playerStatsApi.createPlayerStats({
-          gameId: game.id,
-          playerId: playerStat.playerId,
-          teamType: playerStat.teamType,
-          twoPointAttempts: playerStat.twoPointAttempts,
-          twoPointMade: playerStat.twoPointMade,
-          threePointAttempts: playerStat.threePointAttempts,
-          threePointMade: playerStat.threePointMade,
-          defensiveRebounds: playerStat.defensiveRebounds,
-          offensiveRebounds: playerStat.offensiveRebounds,
-          assists: playerStat.assists,
-        })
-      );
-
-      await Promise.all(playerStatsPromises);
-
-      const teamAStats = await teamStatsApi.generateTeamStats(game.id, 'TEAM_A');
-      const teamBStats = await teamStatsApi.generateTeamStats(game.id, 'TEAM_B');
-
-      await gameApi.updateGame(game.id, {
-        teamAId: teamA.id,
-        teamBId: teamB.id,
-        teamAStatsId: teamAStats.id,
-        teamBStatsId: teamBStats.id,
-        teamAScore: teamAStats.totalPoints,
-        teamBScore: teamBStats.totalPoints,
-      });
-
-      try {
-        await gameApi.generateAnalysis(game.id, matchData.logContext);
-      } catch (err) {
-      }
-
-      if (matchData.logContext) {
-        const playerTeams: Record<string, 'TEAM_A' | 'TEAM_B'> = {};
-        for (const p of matchData.logContext.totalStats.teamA) {
-          playerTeams[p.playerNickname] = 'TEAM_A';
-        }
-        for (const p of matchData.logContext.totalStats.teamB) {
-          playerTeams[p.playerNickname] = 'TEAM_B';
-        }
-        matchEventLogApi.save(game.id, matchData.logContext.events, playerTeams).catch(() => {});
-      }
-
-      if (matchData.videos && matchData.videos.length > 0) {
-        const videoPromises = matchData.videos.map((video) =>
-          videoApi.createVideo({
-            ...video,
-            gameId: game.id,
-          })
-        );
-        await Promise.all(videoPromises);
-      }
+      const game = await createGameRecord(matchData.metadata);
+      const { teamA, teamB } = await createMatchTeams(game.id, matchData.teamPlayers);
+      await createPlayerStatsForGame(game.id, matchData.playerStats);
+      await generateAndLinkTeamStats(game.id, teamA, teamB);
+      triggerAnalysisInBackground(game.id, matchData.logContext);
+      if (matchData.logContext) saveEventLogInBackground(game.id, matchData.logContext);
+      await uploadMatchVideos(game.id, matchData.videos);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create match stats';
-      setError(errorMessage);
+      const message = err instanceof Error ? err.message : 'Failed to create match stats';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -101,91 +125,76 @@ export const useMatchStats = () => {
   const updateMatchStats = async (gameId: string, matchData: EditMatchStatsData): Promise<void> => {
     setLoading(true);
     setError(null);
-
     try {
       await gameApi.updateGame(gameId, {
         gameNumber: matchData.metadata.gameNumber,
         date: matchData.metadata.date,
         teamSize: matchData.metadata.teamSize,
         notes: matchData.metadata.notes,
+        countInStats: matchData.metadata.countInStats,
       });
 
-      const existingTeams = await teamApi.getTeamsByGameId(gameId);
-      const teamA = existingTeams.find(t => t.teamType === 'TEAM_A');
-      const teamB = existingTeams.find(t => t.teamType === 'TEAM_B');
+      await updateTeamRosters(gameId, matchData.teamPlayers);
+      await replacePlayerStats(gameId, matchData.playerStats);
 
-      if (teamA) {
-        await teamApi.updateTeam(teamA.id, {
-          playerIds: matchData.teamPlayers.teamA.map(p => p.id),
-        });
-      }
-
-      if (teamB) {
-        await teamApi.updateTeam(teamB.id, {
-          playerIds: matchData.teamPlayers.teamB.map(p => p.id),
-        });
-      }
-
-      const existingPlayerStats = await playerStatsApi.getPlayerStatsByGameId(gameId);
-
-      await Promise.all(existingPlayerStats.map(async (stat) => {
-        try {
-          await playerStatsApi.deletePlayerStats(stat.id);
-        } catch (err: any) {
-          if (err?.response?.status !== 404) {
-            throw err;
-          }
-        }
-      }));
-
-      const playerStatsPromises = matchData.playerStats.map((playerStat) =>
-        playerStatsApi.createPlayerStats({
-          gameId: gameId,
-          playerId: playerStat.playerId,
-          teamType: playerStat.teamType,
-          twoPointAttempts: playerStat.twoPointAttempts,
-          twoPointMade: playerStat.twoPointMade,
-          threePointAttempts: playerStat.threePointAttempts,
-          threePointMade: playerStat.threePointMade,
-          defensiveRebounds: playerStat.defensiveRebounds,
-          offensiveRebounds: playerStat.offensiveRebounds,
-          assists: playerStat.assists,
-        })
-      );
-
-      await Promise.all(playerStatsPromises);
-
-      const teamAStats = await teamStatsApi.recalculateTeamStats(gameId, 'TEAM_A');
-      const teamBStats = await teamStatsApi.recalculateTeamStats(gameId, 'TEAM_B');
-
+      const { teamAStats, teamBStats } = await recalculateScores(gameId);
       await gameApi.updateGame(gameId, {
         teamAScore: teamAStats.totalPoints,
         teamBScore: teamBStats.totalPoints,
       });
 
-      if (matchData.videos && matchData.videos.length > 0) {
-        const videoPromises = matchData.videos.map((video) => {
-          const videoData = {
-            ...video,
-            gameId: gameId,
-          };
-          return videoApi.createVideo(videoData);
-        });
-        await Promise.all(videoPromises);
-      }
+      await uploadMatchVideos(gameId, matchData.videos);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update match stats';
-      setError(errorMessage);
+      const message = err instanceof Error ? err.message : 'Failed to update match stats';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return {
-    createMatchStats,
-    updateMatchStats,
-    loading,
-    error,
-  };
+  return { createMatchStats, updateMatchStats, loading, error };
 };
+
+async function updateTeamRosters(
+  gameId: string,
+  teamPlayers: EditMatchStatsData['teamPlayers']
+): Promise<void> {
+  const existingTeams = await teamApi.getTeamsByGameId(gameId);
+  const teamA = existingTeams.find((t) => t.teamType === 'TEAM_A');
+  const teamB = existingTeams.find((t) => t.teamType === 'TEAM_B');
+  await Promise.all([
+    teamA ? teamApi.updateTeam(teamA.id, { playerIds: teamPlayers.teamA.map((p) => p.id) }) : Promise.resolve(),
+    teamB ? teamApi.updateTeam(teamB.id, { playerIds: teamPlayers.teamB.map((p) => p.id) }) : Promise.resolve(),
+  ]);
+}
+
+async function replacePlayerStats(
+  gameId: string,
+  playerStats: EditMatchStatsData['playerStats']
+): Promise<void> {
+  const existing = await playerStatsApi.getPlayerStatsByGameId(gameId);
+  await Promise.all(
+    existing.map((stat) =>
+      playerStatsApi.deletePlayerStats(stat.id).catch((err: any) => {
+        if (err?.response?.status !== 404) throw err;
+      })
+    )
+  );
+  await Promise.all(
+    playerStats.map((s) =>
+      playerStatsApi.createPlayerStats({
+        gameId,
+        playerId: s.playerId,
+        teamType: s.teamType,
+        twoPointAttempts: s.twoPointAttempts,
+        twoPointMade: s.twoPointMade,
+        threePointAttempts: s.threePointAttempts,
+        threePointMade: s.threePointMade,
+        defensiveRebounds: s.defensiveRebounds,
+        offensiveRebounds: s.offensiveRebounds,
+        assists: s.assists,
+      })
+    )
+  );
+}

@@ -9,11 +9,7 @@ export class PlayerController {
   static async getAllPlayers(_req: Request, res: Response, next: NextFunction) {
     try {
       const players = await PlayerService.getAllPlayers();
-      res.status(200).json({
-        status: "success",
-        results: players.length,
-        data: { players },
-      });
+      res.status(200).json({ success: true, data: players });
     } catch (error) {
       next(error);
     }
@@ -27,11 +23,7 @@ export class PlayerController {
   ) {
     try {
       const players = await PlayerService.getActivePlayers();
-      res.status(200).json({
-        status: "success",
-        results: players.length,
-        data: { players },
-      });
+      res.status(200).json({ success: true, data: players });
     } catch (error) {
       next(error);
     }
@@ -41,10 +33,7 @@ export class PlayerController {
   static async getPlayerById(req: Request, res: Response, next: NextFunction) {
     try {
       const player = await PlayerService.getPlayerById(req.params.id);
-      res.status(200).json({
-        status: "success",
-        data: { player },
-      });
+      res.status(200).json({ success: true, data: player });
     } catch (error) {
       next(error);
     }
@@ -55,10 +44,7 @@ export class PlayerController {
     try {
       const playerData: CreatePlayerDto = req.body;
       const newPlayer = await PlayerService.createPlayer(playerData);
-      res.status(201).json({
-        status: "success",
-        data: { player: newPlayer },
-      });
+      res.status(201).json({ success: true, data: newPlayer });
     } catch (error) {
       next(error);
     }
@@ -73,7 +59,7 @@ export class PlayerController {
 
       if (userRole !== PlayerRole.ADMIN && userId !== targetPlayerId) {
         res.status(403).json({
-          status: "error",
+          success: false,
           message: "Yalnızca kendinize ait profili güncelleyebilirsiniz",
         });
         return;
@@ -84,18 +70,12 @@ export class PlayerController {
       if (userRole !== PlayerRole.ADMIN) {
         delete (updateData as any).role;
         delete (updateData as any).isActive;
-        delete (updateData as any).email; // Güvenlik için email değişikliğini engelle
-        delete (updateData as any).password; // Şifre ayrı bir endpoint üzerinden değiştirilmeli
+        delete (updateData as any).email;
+        delete (updateData as any).password;
       }
 
-      const updatedPlayer = await PlayerService.updatePlayer(
-        targetPlayerId,
-        updateData
-      );
-      res.status(200).json({
-        status: "success",
-        data: { player: updatedPlayer },
-      });
+      const updatedPlayer = await PlayerService.updatePlayer(targetPlayerId, updateData);
+      res.status(200).json({ success: true, data: updatedPlayer });
     } catch (error) {
       next(error);
     }
@@ -109,18 +89,14 @@ export class PlayerController {
 
       if (!newPassword || newPassword.length < 6) {
         res.status(400).json({
-          status: "error",
+          success: false,
           message: "Yeni parolanın az 6 karakter olması lazım",
         });
         return;
       }
 
       await PlayerService.setPlayerPassword(id, newPassword);
-
-      res.status(200).json({
-        status: "success",
-        message: "Parola başarılı bir şekilde oluşturuldu",
-      });
+      res.status(200).json({ success: true, message: "Parola başarılı bir şekilde oluşturuldu" });
     } catch (error) {
       next(error);
     }

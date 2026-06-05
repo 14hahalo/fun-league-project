@@ -8,8 +8,8 @@ export const playerApi = {
     const cached = cache.get<Player[]>(cacheKey);
     if (cached) return cached;
 
-    const response = await apiClient.get<{ data: { players: Player[] } }>('/players');
-    const players = response.data.data.players;
+    const response = await apiClient.get<{ success: boolean; data: Player[] }>('/players');
+    const players = response.data.data;
     cache.set(cacheKey, players, cache.getTTL('players'));
     return players;
   },
@@ -19,8 +19,8 @@ export const playerApi = {
     const cached = cache.get<Player[]>(cacheKey);
     if (cached) return cached;
 
-    const response = await apiClient.get<{ data: { players: Player[] } }>('/players/active');
-    const players = response.data.data.players;
+    const response = await apiClient.get<{ success: boolean; data: Player[] }>('/players/active');
+    const players = response.data.data;
     cache.set(cacheKey, players, cache.getTTL('players'));
     return players;
   },
@@ -30,25 +30,25 @@ export const playerApi = {
     const cached = cache.get<Player>(cacheKey);
     if (cached) return cached;
 
-    const response = await apiClient.get<{ data: { player: Player } }>(`/players/${id}`);
-    const player = response.data.data.player;
+    const response = await apiClient.get<{ success: boolean; data: Player }>(`/players/${id}`);
+    const player = response.data.data;
     cache.set(cacheKey, player, cache.getTTL('players'));
     return player;
   },
 
   createPlayer: async (data: CreatePlayerDto): Promise<Player> => {
-    const response = await apiClient.post<{ data: { player: Player } }>('/players', data);
+    const response = await apiClient.post<{ success: boolean; data: Player }>('/players', data);
     cache.invalidate(CacheKeys.allPlayers());
     cache.invalidate(CacheKeys.activePlayers());
-    return response.data.data.player;
+    return response.data.data;
   },
 
   updatePlayer: async (id: string, data: UpdatePlayerDto): Promise<Player> => {
-    const response = await apiClient.put<{ data: { player: Player } }>(`/players/${id}`, data);
+    const response = await apiClient.put<{ success: boolean; data: Player }>(`/players/${id}`, data);
     cache.invalidate(CacheKeys.player(id));
     cache.invalidate(CacheKeys.allPlayers());
     cache.invalidate(CacheKeys.activePlayers());
-    return response.data.data.player;
+    return response.data.data;
   },
 
   deletePlayer: async (id: string): Promise<void> => {

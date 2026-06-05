@@ -7,7 +7,9 @@ import type {
   Team,
   CreateTeamDto,
 } from '../types/basketball.types';
-import { playerStatsApi, teamStatsApi, teamApi } from '../api/basketballApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { teamStatsApi } from '../api/teamStatsApi';
+import { teamApi } from '../api/teamApi';
 
 export const useBasketballStats = () => {
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);

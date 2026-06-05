@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePlayers } from '../hooks/usePlayers';
 import { Loading } from '../components/shared/Loading';
-import { playerStatsApi, gameApi, comparisonLogApi } from '../api/basketballApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { gameApi } from '../api/gameApi';
+import { comparisonLogApi } from '../api/comparisonLogApi';
 import { cache, CacheKeys } from '../utils/cache';
 import type { Player } from '../types/player.types';
 import type { PlayerStats, Game } from '../types/basketball.types';
@@ -317,7 +319,9 @@ export const PlayerComparisonPage = () => {
           return;
         }
 
-        const gameMap = new Map<string, Game>((allGames as Game[]).map(g => [g.id, g]));
+        const gameMap = new Map<string, Game>(
+          (allGames as Game[]).filter(g => g.countInStats !== false).map(g => [g.id, g])
+        );
 
         const sameA: PlayerStats[] = [], sameB: PlayerStats[] = [];
         const diffA: PlayerStats[] = [], diffB: PlayerStats[] = [];

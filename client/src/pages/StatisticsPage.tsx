@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePlayers } from '../hooks/usePlayers';
 import { useSeasons } from '../hooks/useSeasons';
+import { useSeasonGameLeaders } from '../hooks/useSeasonGameLeaders';
 import { Loading } from '../components/shared/Loading';
-import { playerStatsApi, gameApi } from '../api/basketballApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { gameApi } from '../api/gameApi';
 import { cache, CacheKeys } from '../utils/cache';
 import type { Player } from '../types/player.types';
 import type { PlayerStats, Game } from '../types/basketball.types';
 import type { Season } from '../types/season.types';
 import { PlayerRole } from '../types/player.types';
 import { PlayerDetailsModal } from '../components/visitor/PlayerDetailsModal';
+import { SeasonLeadersTables } from '../components/visitor/SeasonLeadersTables';
 
 type SortColumn =
   | 'gamesPlayed' | 'wins' | 'losses' | 'winPercentage' | 'winStreak' | 'last5Wins'
@@ -87,6 +90,7 @@ export const StatisticsPage = () => {
   const { players: allPlayers, loading: playersLoading } = usePlayers(false);
   const { seasons, loading: seasonsLoading } = useSeasons();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | 'all'>('all');
+  const { leaders: gameLeaders } = useSeasonGameLeaders(selectedSeasonId === 'all' ? null : selectedSeasonId);
   const [sortColumn, setSortColumn] = useState<SortColumn>('avgEfficiency');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedPlayerStats[]>([]);
@@ -153,9 +157,9 @@ export const StatisticsPage = () => {
         setLoading(true);
         let filteredGames: Game[];
         if (selectedSeasonId === 'all') {
-          filteredGames = allGames;
+          filteredGames = allGames.filter((game: Game) => game.countInStats !== false);
         } else {
-          filteredGames = allGames.filter((game: Game) => game.seasonId === selectedSeasonId);
+          filteredGames = allGames.filter((game: Game) => game.seasonId === selectedSeasonId && game.countInStats !== false);
         }
 
         const gameMap = new Map<string, Game>(filteredGames.map((g: Game) => [g.id, g]));
@@ -308,12 +312,6 @@ export const StatisticsPage = () => {
   return (
     <div className="min-h-screen py-6 md:py-10 px-2 md:px-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="max-w-[1600px] mx-auto">
-        <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-500 to-cyan-400 mb-3 tracking-tight">
-            İstatistikler
-          </h1>
-        </div>
-
         <div className="mb-6 flex justify-center">
           <div className="relative p-[1px] rounded-xl bg-gradient-to-r from-orange-500 to-amber-500">
             <div className="bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3">
@@ -338,12 +336,15 @@ export const StatisticsPage = () => {
           </div>
         </div>
 
-        <div className="text-center mb-6">
-          <span className="text-xs uppercase tracking-widest font-bold text-orange-300">
-            {selectedSeason ? `Sezon ${selectedSeason.name}` : 'Tüm Zamanlar'}
-          </span>
-        </div>
+        {selectedSeasonId !== 'all' && (
+          <SeasonLeadersTables
+            leaders={gameLeaders}
+            isOffSeason={!(selectedSeason?.isActive ?? false)}
+            seasonName={selectedSeason?.name}
+          />
+        )}
 
+        <div className="mt-10 md:mt-14">
         {loading ? (
           <Loading />
         ) : sortedStats.length === 0 ? (
@@ -461,6 +462,7 @@ export const StatisticsPage = () => {
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {selectedPlayer && (

@@ -17,7 +17,10 @@ export const TeamPlayerSelection = ({
   onComplete,
   onCancel,
 }: TeamPlayerSelectionProps) => {
-  const [metadata, setMetadata] = useState<MatchMetadata>(initialMetadata);
+  const [metadata, setMetadata] = useState<MatchMetadata>({
+    countInStats: true,
+    ...initialMetadata,
+  });
   const [teamSize, setTeamSize] = useState<number>(
     initialTeamPlayers.teamA.length > 0 ? initialTeamPlayers.teamA.length : 5
   );
@@ -156,6 +159,30 @@ export const TeamPlayerSelection = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Opsiyonel"
             />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-4 p-3 rounded-md border border-gray-200 bg-gray-50">
+          <button
+            type="button"
+            onClick={() => setMetadata({ ...metadata, countInStats: !metadata.countInStats })}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+              metadata.countInStats ? 'bg-orange-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                metadata.countInStats ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <div>
+            <span className="text-sm font-semibold text-gray-800">İstatistiklere Yansıt</span>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {metadata.countInStats
+                ? 'Bu maç oyuncu kümülatif istatistiklerine dahil edilecek.'
+                : 'Bu maç kayıt altına alınacak ancak oyuncu istatistiklerine yansımayacak (ör. 4v4 half-court).'}
+            </p>
           </div>
         </div>
       </div>

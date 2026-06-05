@@ -6,7 +6,8 @@ import { Loading } from '../components/shared/Loading';
 import type { Player, Position } from '../types/player.types';
 import { PlayerRole } from '../types/player.types';
 import type { PlayerStats } from '../types/basketball.types';
-import { playerStatsApi } from '../api/basketballApi';
+import { playerStatsApi } from '../api/playerStatsApi';
+import { gameApi } from '../api/gameApi';
 import type { TopPlayerStats } from '../hooks/useTopPlayers';
 
 export const PlayersPage = () => {
@@ -112,11 +113,16 @@ export const PlayersPage = () => {
       const statsMap = new Map<string, TopPlayerStats>();
 
       try {
-        const playerIds = players.map(p => p.id);
+        const [playerIds, allGames] = [players.map(p => p.id), await gameApi.getAllGames()];
+        const excludedGameIds = new Set(
+          allGames.filter(g => g.countInStats === false).map(g => g.id)
+        );
         const bulkStats = await playerStatsApi.getBulkPlayerStats(playerIds);
 
         players.forEach((player) => {
-          const stats = bulkStats[player.id] || [];
+          const stats = (bulkStats[player.id] || []).filter(
+            (s: PlayerStats) => !excludedGameIds.has(s.gameId)
+          );
           const averages = calculatePlayerAverages(stats, player);
           statsMap.set(player.id, averages);
         });

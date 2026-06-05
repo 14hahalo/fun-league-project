@@ -275,9 +275,16 @@ export const AdminPage = () => {
               >
                 <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">
-                      Maç #{game.gameNumber}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">
+                        Maç #{game.gameNumber}
+                      </span>
+                      {game.countInStats === false && (
+                        <span className="text-[10px] font-bold bg-white/20 text-white px-1.5 py-0.5 rounded">
+                          Stat Dışı
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-medium text-white opacity-90">
                       {new Date(game.date).toLocaleDateString('tr-TR')}
                     </span>

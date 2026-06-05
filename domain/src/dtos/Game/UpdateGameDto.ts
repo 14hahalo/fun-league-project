@@ -13,4 +13,5 @@ export interface UpdateGameDto {
   teamSize?: number;
   notes?: string;
   seasonId?: string;
+  countInStats?: boolean;
 }
