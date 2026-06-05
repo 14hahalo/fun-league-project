@@ -17,10 +17,7 @@ export const TeamPlayerSelection = ({
   onComplete,
   onCancel,
 }: TeamPlayerSelectionProps) => {
-  const [metadata, setMetadata] = useState<MatchMetadata>({
-    countInStats: true,
-    ...initialMetadata,
-  });
+  const [metadata, setMetadata] = useState<MatchMetadata>(initialMetadata);
   const [teamSize, setTeamSize] = useState<number>(
     initialTeamPlayers.teamA.length > 0 ? initialTeamPlayers.teamA.length : 5
   );
