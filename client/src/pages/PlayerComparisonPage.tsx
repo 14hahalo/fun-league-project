@@ -32,7 +32,6 @@ interface ComparisonResult {
   bStats: { sameTeam: ComparisonStats; diffTeam: ComparisonStats };
 }
 
-// Canonical form stored in cache: first player is always the one with the lexicographically smaller ID
 interface CachedComparison {
   canonicalFirstId: string;
   result: ComparisonResult;
@@ -245,7 +244,6 @@ const PlayerSearchDropdown: React.FC<DropdownProps> = ({ players, selected, onSe
   );
 };
 
-// ─── Takım Değerlendirmesi types ────────────────────────────────────────────
 
 interface TeamEvalPlayerStat {
   player: Player;
@@ -273,7 +271,6 @@ interface TeamEvalResult {
   teamAvgAst: number;
 }
 
-// ─── Multi-player search dropdown ────────────────────────────────────────────
 
 interface MultiPlayerSearchProps {
   players: Player[];
@@ -406,7 +403,6 @@ const MultiPlayerSearch: React.FC<MultiPlayerSearchProps> = ({ players, selected
   );
 };
 
-// ─── TeamEvaluationSection ────────────────────────────────────────────────────
 
 interface TeamEvaluationSectionProps {
   players: Player[];
@@ -781,7 +777,6 @@ const TeamEvaluationSection: React.FC<TeamEvaluationSectionProps> = ({ players }
   );
 };
 
-// ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function PlayerAvatar({ player, accent = 'orange' }: { player: Player; accent?: 'orange' | 'cyan' }) {
   const gradient = accent === 'cyan'
@@ -831,7 +826,6 @@ export const PlayerComparisonPage = () => {
         const cacheKey = CacheKeys.playerComparison(playerA.id, playerB.id);
         const cached = cache.get<CachedComparison>(cacheKey);
         if (cached) {
-          // Swap aStats/bStats if the selection order differs from the canonical order
           const result = cached.canonicalFirstId === playerA.id
             ? cached.result
             : { ...cached.result, aStats: cached.result.bStats, bStats: cached.result.aStats };
@@ -839,7 +833,6 @@ export const PlayerComparisonPage = () => {
           return;
         }
 
-        // Fire-and-forget log — do not await so it never blocks the UI
         comparisonLogApi.log(playerA.nickname, playerB.nickname).catch(() => {});
 
         const [statsA, statsB, allGames] = await Promise.all([
@@ -866,6 +859,7 @@ export const PlayerComparisonPage = () => {
         const diffA: PlayerStats[] = [], diffB: PlayerStats[] = [];
 
         for (const id of mutualIds) {
+          if (!gameMap.has(id)) continue;
           const sa = mapA.get(id)!;
           const sb = mapB.get(id)!;
           if (sa.teamType === sb.teamType) {
@@ -876,14 +870,13 @@ export const PlayerComparisonPage = () => {
         }
 
         const result: ComparisonResult = {
-          totalMutualGames: mutualIds.length,
+          totalMutualGames: sameA.length + diffA.length,
           sameTeamGames: sameA.length,
           diffTeamGames: diffA.length,
           aStats: { sameTeam: calcStats(sameA, gameMap), diffTeam: calcStats(diffA, gameMap) },
           bStats: { sameTeam: calcStats(sameB, gameMap), diffTeam: calcStats(diffB, gameMap) },
         };
 
-        // Store canonically: first player is the one whose ID sorts first
         const canonicalFirstId = [playerA.id, playerB.id].sort()[0];
         const canonicalResult = canonicalFirstId === playerA.id
           ? result
@@ -1106,7 +1099,6 @@ export const PlayerComparisonPage = () => {
           </>
         ) : null}
 
-        {/* ── Takım Değerlendirmesi section ── */}
         <TeamEvaluationSection players={players} />
 
       </div>
