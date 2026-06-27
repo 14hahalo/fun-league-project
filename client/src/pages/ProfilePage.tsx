@@ -26,6 +26,7 @@ export const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [badgesTouched, setBadgesTouched] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -39,6 +40,7 @@ export const ProfilePage = () => {
         height: user.height,
         badges: user.badges || {},
       });
+      setBadgesTouched(false);
     }
   }, [user]);
 
@@ -61,6 +63,7 @@ export const ProfilePage = () => {
       const submitData = {
         ...formData,
         position: formData.position || undefined,
+        badges: badgesTouched ? formData.badges : undefined,
       };
 
       await axios.put(
@@ -251,7 +254,7 @@ export const ProfilePage = () => {
             <div className="pt-6 border-t border-gray-200">
               <BadgeSelector
                 selectedBadges={formData.badges}
-                onChange={(badges) => setFormData((prev) => ({ ...prev, badges }))}
+                onChange={(badges) => { setFormData((prev) => ({ ...prev, badges })); setBadgesTouched(true); }}
               />
             </div>
 

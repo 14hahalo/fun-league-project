@@ -1,4 +1,4 @@
-import { PlayerRole } from "../../models/Player";
+import { PlayerBadges, PlayerRole } from "../../models/Player";
 
 export interface AuthResponse {
   accessToken: string;
@@ -9,9 +9,13 @@ export interface AuthResponse {
     nickname: string;
     email?: string;
     role: PlayerRole;
+    needsPasswordChange?: boolean;
     firstName?: string;
     lastName?: string;
     photoUrl?: string;
     jerseyNumber?: number;
+    position?: string;
+    height?: number;
+    badges?: PlayerBadges;
   };
 }

@@ -57,10 +57,14 @@ class AuthService {
           id: player.id,
           nickname: player.nickname,
           role: player.role,
+          needsPasswordChange: player.needsPasswordChange || false,
           firstName: player.firstName,
           lastName: player.lastName,
           photoUrl: player.photoUrl,
           jerseyNumber: player.jerseyNumber,
+          position: player.position,
+          height: player.height,
+          badges: player.badges,
         },
       };
     } catch (error) {
@@ -173,6 +177,8 @@ class AuthService {
         photoUrl: player.photoUrl,
         jerseyNumber: player.jerseyNumber,
         position: player.position,
+        height: player.height,
+        badges: player.badges,
         isActive: player.isActive,
       };
     } catch (error) {
