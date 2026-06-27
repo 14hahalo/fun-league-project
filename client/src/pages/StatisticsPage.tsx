@@ -91,6 +91,7 @@ export const StatisticsPage = () => {
   const { seasons, loading: seasonsLoading } = useSeasons();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | 'all'>('all');
   const { leaders: gameLeaders } = useSeasonGameLeaders(selectedSeasonId === 'all' ? null : selectedSeasonId);
+  const [tableLayout, setTableLayout] = useState<'default' | 'compact'>('compact');
   const [sortColumn, setSortColumn] = useState<SortColumn>('avgEfficiency');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedPlayerStats[]>([]);
@@ -337,11 +338,16 @@ export const StatisticsPage = () => {
         </div>
 
         {selectedSeasonId !== 'all' && (
-          <SeasonLeadersTables
-            leaders={gameLeaders}
-            isOffSeason={!(selectedSeason?.isActive ?? false)}
-            seasonName={selectedSeason?.name}
-          />
+          <div>
+            <div className="flex justify-end max-w-7xl mx-auto px-4 -mb-6">
+            </div>
+            <SeasonLeadersTables
+              leaders={gameLeaders}
+              isOffSeason={!(selectedSeason?.isActive ?? false)}
+              seasonName={selectedSeason?.name}
+              layout={tableLayout}
+            />
+          </div>
         )}
 
         <div className="mt-10 md:mt-14">

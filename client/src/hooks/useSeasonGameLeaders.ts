@@ -16,6 +16,11 @@ export interface DoubleDoubleRecord {
   count: number;
 }
 
+export interface WinStreakRecord {
+  playerName: string;
+  value: number;
+}
+
 export interface SeasonGameLeaders {
   topPoints: SingleGameRecord[];
   topRebounds: SingleGameRecord[];
@@ -23,6 +28,7 @@ export interface SeasonGameLeaders {
   topThreePointMade: SingleGameRecord[];
   topEfficiency: SingleGameRecord[];
   doubleDoubles: DoubleDoubleRecord[];
+  longestWinStreaks: WinStreakRecord[];
 }
 
 const formatMatchWeek = (gameNumber: string) => gameNumber.replace('#', '');
@@ -35,6 +41,7 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
     topThreePointMade: [],
     topEfficiency: [],
     doubleDoubles: [],
+    longestWinStreaks: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +65,13 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
         const seasonGames = allGames.filter((g: Game) => g.seasonId === seasonId && g.countInStats !== false);
         const gameMap = new Map<string, string>(
           seasonGames.map((g: Game) => [g.id, formatMatchWeek(g.gameNumber)])
+        );
+        const gameScoreMap = new Map<string, { date: number; teamAScore: number; teamBScore: number }>(
+          seasonGames.map((g: Game) => [g.id, {
+            date: new Date(g.date).getTime(),
+            teamAScore: g.teamAScore,
+            teamBScore: g.teamBScore,
+          }])
         );
 
         const activePlayers = players.filter(
@@ -83,6 +97,7 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
         const threePointMade: StatEntry[] = [];
         const efficiency: StatEntry[] = [];
         const ddMap = new Map<string, { playerName: string; count: number }>();
+        const winStreakMap = new Map<string, WinStreakRecord>();
 
         for (const player of activePlayers) {
           const name = playerNameMap.get(player.id) ?? player.id;
@@ -114,6 +129,29 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
               ddMap.set(player.id, entry);
             }
           }
+
+          // Compute longest win streak: sort chronologically (ascending by game.date), walk once
+          const sortedStats = seasonStats
+            .map((s: PlayerStats) => ({ stat: s, info: gameScoreMap.get(s.gameId) }))
+            .filter((x): x is { stat: PlayerStats; info: { date: number; teamAScore: number; teamBScore: number } } => !!x.info)
+            .sort((a, b) => a.info.date - b.info.date);
+
+          let maxStreak = 0;
+          let currentStreak = 0;
+          for (const { stat, info } of sortedStats) {
+            const won = stat.teamType === 'TEAM_A'
+              ? info.teamAScore > info.teamBScore
+              : info.teamBScore > info.teamAScore;
+            if (won) {
+              currentStreak++;
+              if (currentStreak > maxStreak) maxStreak = currentStreak;
+            } else {
+              currentStreak = 0;
+            }
+          }
+          if (maxStreak > 0) {
+            winStreakMap.set(player.id, { playerName: name, value: maxStreak });
+          }
         }
 
         const sortAndSlice = (arr: StatEntry[], n = 5) =>
@@ -123,6 +161,10 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
 
+        const longestWinStreaks = [...winStreakMap.values()]
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 5);
+
         setLeaders({
           topPoints: sortAndSlice(points),
           topRebounds: sortAndSlice(rebounds),
@@ -130,6 +172,7 @@ export const useSeasonGameLeaders = (seasonId: string | null) => {
           topThreePointMade: sortAndSlice(threePointMade),
           topEfficiency: sortAndSlice(efficiency),
           doubleDoubles,
+          longestWinStreaks,
         });
       } catch (err: any) {
         setError(err.message ?? 'Sezon lider tabloları yüklenirken bir hata oluştu');

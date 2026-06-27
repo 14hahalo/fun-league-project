@@ -10,8 +10,9 @@ interface TableConfig {
   showMatchWeek?: boolean;
 }
 
-const LeadersTable = ({ config }: { config: TableConfig }) => {
+const LeadersTable = ({ config, tight = false }: { config: TableConfig; tight?: boolean }) => {
   const { title, icon, accentColor, headerBg, data, unit, showMatchWeek = true } = config;
+  const px = tight ? 'px-3' : 'px-4';
 
   return (
     <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm flex flex-col">
@@ -26,11 +27,11 @@ const LeadersTable = ({ config }: { config: TableConfig }) => {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-xs uppercase">
-              <th className="text-left px-4 py-2 font-semibold">#</th>
-              <th className="text-left px-4 py-2 font-semibold">Oyuncu</th>
-              <th className="text-right px-4 py-2 font-semibold">Miktar</th>
+              <th className={`text-left ${px} py-2 font-semibold`}>#</th>
+              <th className={`text-left ${px} py-2 font-semibold`}>Oyuncu</th>
+              <th className={`text-right ${px} py-2 font-semibold`}>Miktar</th>
               {showMatchWeek && (
-                <th className="text-right px-4 py-2 font-semibold">Maç Haftası</th>
+                <th className={`text-right ${px} py-2 font-semibold`}>Maç Haftası</th>
               )}
             </tr>
           </thead>
@@ -47,16 +48,16 @@ const LeadersTable = ({ config }: { config: TableConfig }) => {
                   key={`${row.playerName}-${row.matchWeek ?? idx}-${idx}`}
                   className="border-b border-white/5 hover:bg-white/5 transition-colors"
                 >
-                  <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">{idx + 1}</td>
-                  <td className="px-4 py-2.5 font-semibold text-white truncate max-w-[120px]">
+                  <td className={`${px} py-2.5 text-gray-500 font-mono text-xs`}>{idx + 1}</td>
+                  <td className={`${px} py-2.5 font-semibold text-white truncate max-w-[120px]`}>
                     {row.playerName}
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-black tabular-nums ${accentColor}`}>
+                  <td className={`${px} py-2.5 text-right font-black tabular-nums ${accentColor}`}>
                     {row.value}
                     {unit && <span className="text-xs font-normal text-gray-400 ml-0.5">{unit}</span>}
                   </td>
                   {showMatchWeek && (
-                    <td className="px-4 py-2.5 text-right text-gray-300 font-mono text-xs">
+                    <td className={`${px} py-2.5 text-right text-gray-300 font-mono text-xs`}>
                       {row.matchWeek}
                     </td>
                   )}
@@ -74,9 +75,15 @@ interface SeasonLeadersTablesProps {
   leaders: SeasonGameLeaders;
   isOffSeason?: boolean;
   seasonName?: string;
+  layout?: 'default' | 'compact';
 }
 
-export const SeasonLeadersTables = ({ leaders, isOffSeason = false, seasonName }: SeasonLeadersTablesProps) => {
+export const SeasonLeadersTables = ({
+  leaders,
+  isOffSeason = false,
+  seasonName,
+  layout = 'compact',
+}: SeasonLeadersTablesProps) => {
   const tables: TableConfig[] = [
     {
       title: 'En Çok Sayı',
@@ -121,16 +128,50 @@ export const SeasonLeadersTables = ({ leaders, isOffSeason = false, seasonName }
       data: leaders.doubleDoubles.map((r) => ({ playerName: r.playerName, value: r.count })),
       showMatchWeek: false,
     },
+    {
+      title: 'En Uzun Win Streak',
+      icon: '🏆',
+      accentColor: 'text-emerald-400',
+      headerBg: 'bg-gradient-to-r from-emerald-900/60 to-teal-900/40',
+      data: leaders.longestWinStreaks,
+      unit: 'maç',
+      showMatchWeek: false,
+    },
   ];
+
+  const heading = (
+    <h2 className="text-center text-xl md:text-3xl font-black text-white mb-8 md:mb-10 uppercase tracking-wide">
+      {isOffSeason
+        ? `📋 ${seasonName ? `${seasonName} ` : ''}SEZON MAÇ REKORLARI 📋`
+        : `📋 ${seasonName ? `${seasonName} ` : ''}SEZON LİDERLERİ 📋`}
+    </h2>
+  );
+
+  if (layout === 'compact') {
+    return (
+      <div className="mt-16 px-4">
+        {heading}
+        <div className="max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+            {tables.slice(0, 3).map((cfg) => (
+              <LeadersTable key={cfg.title} config={cfg} />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[4fr_4fr_3fr_3fr] xl:items-start gap-4 md:gap-6">
+            <LeadersTable config={tables[3]} tight />
+            <LeadersTable config={tables[4]} tight />
+            <LeadersTable config={tables[5]} />
+            <LeadersTable config={tables[6]} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-16 px-4">
-      <h2 className="text-center text-xl md:text-3xl font-black text-white mb-8 md:mb-10 uppercase tracking-wide">
-        {isOffSeason
-          ? `📋 ${seasonName ? `${seasonName} ` : ''}SEZON MAÇ REKORLARI 📋`
-          : `📋 ${seasonName ? `${seasonName} ` : ''}SEZON LİDERLERİ 📋`}
-      </h2>
-
+      {heading}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto">
         {tables.map((cfg) => (
           <LeadersTable key={cfg.title} config={cfg} />
