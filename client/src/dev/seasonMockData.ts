@@ -112,6 +112,10 @@ export const mockSeasonGameLeaders: SeasonGameLeaders = {
     { playerName: 'Hahalo', count: 4 },
     { playerName: 'ilkers', count: 2 },
   ],
+  longestWinStreaks: [
+    { playerName: 'Hahalo', value: 5 },
+    { playerName: 'ilkers', value: 3 },
+  ],
 };
 
 export const mockSeasonLeaders: MonthlyLeaders = {
