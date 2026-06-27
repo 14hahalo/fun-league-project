@@ -19,61 +19,61 @@ export function DevSeasonToggle() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isOffSeason = searchParams.get('season') === 'off';
 
-  const toggle = () => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (isOffSeason) {
-        next.delete('season');
-      } else {
-        next.set('season', 'off');
-      }
-      return next;
-    });
-  };
+  // const toggle = () => {
+  //   setSearchParams((prev) => {
+  //     const next = new URLSearchParams(prev);
+  //     if (isOffSeason) {
+  //       next.delete('season');
+  //     } else {
+  //       next.set('season', 'off');
+  //     }
+  //     return next;
+  //   });
+  // };
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: '4px',
-        fontFamily: 'monospace',
-      }}
-    >
-      <span
-        style={{
-          fontSize: '10px',
-          color: '#f97316',
-          fontWeight: 700,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-        }}
-      >
-        🛠 dev mode
-      </span>
-      <button
-        onClick={toggle}
-        title={isOffSeason ? 'Switch to Active Season view' : 'Switch to Off-Season Awards view'}
-        style={{
-          background: isOffSeason ? '#92400e' : '#1f2937',
-          border: '2px solid #f97316',
-          borderRadius: '8px',
-          color: '#fff',
-          cursor: 'pointer',
-          fontSize: '13px',
-          fontWeight: 700,
-          padding: '8px 14px',
-          transition: 'background 0.15s',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {isOffSeason ? '🏀 Active Season' : '🏆 Off-Season'}
-      </button>
-    </div>
-  );
+  // return (
+  //   // <div
+  //   //   style={{
+  //   //     position: 'fixed',
+  //   //     bottom: '20px',
+  //   //     right: '20px',
+  //   //     zIndex: 9999,
+  //   //     display: 'flex',
+  //   //     flexDirection: 'column',
+  //   //     alignItems: 'flex-end',
+  //   //     gap: '4px',
+  //   //     fontFamily: 'monospace',
+  //   //   }}
+  //   // >
+  //   //   <span
+  //   //     style={{
+  //   //       fontSize: '10px',
+  //   //       color: '#f97316',
+  //   //       fontWeight: 700,
+  //   //       letterSpacing: '0.12em',
+  //   //       textTransform: 'uppercase',
+  //   //     }}
+  //   //   >
+  //   //     🛠 dev mode
+  //   //   </span>
+  //   //   <button
+  //   //     onClick={toggle}
+  //   //     title={isOffSeason ? 'Switch to Active Season view' : 'Switch to Off-Season Awards view'}
+  //   //     style={{
+  //   //       background: isOffSeason ? '#92400e' : '#1f2937',
+  //   //       border: '2px solid #f97316',
+  //   //       borderRadius: '8px',
+  //   //       color: '#fff',
+  //   //       cursor: 'pointer',
+  //   //       fontSize: '13px',
+  //   //       fontWeight: 700,
+  //   //       padding: '8px 14px',
+  //   //       transition: 'background 0.15s',
+  //   //       whiteSpace: 'nowrap',
+  //   //     }}
+  //   //   >
+  //   //     {isOffSeason ? '🏀 Active Season' : '🏆 Off-Season'}
+  //   //   </button>
+  //   // </div>
+  // );
 }

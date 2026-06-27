@@ -7,16 +7,9 @@ import { useTopPlays } from '../hooks/useTopPlays';
 import { FIFAPlayerCard } from '../components/visitor/FIFAPlayerCard';
 import { TopPlaysCarousel } from '../components/visitor/TopPlaysCarousel';
 import { Loading } from '../components/shared/Loading';
-
-// Dev-only imports — Vite replaces import.meta.env.DEV with `false` in
-// production builds, dead-code-eliminates every branch that uses these
-// exports, and Rollup tree-shakes the entire module out of the bundle.
 import { mockCompletedSeason, mockSeasonLeaders } from '../dev/seasonMockData';
-import { DevSeasonToggle } from '../dev/DevSeasonToggle';
 
 export const VisitorPage = () => {
-  // useSearchParams is always called (rules of hooks) but its result is
-  // only used inside the import.meta.env.DEV guard below.
   const [searchParams] = useSearchParams();
 
   const { leaders: monthlyLeaders, loading: monthlyLoading, error: monthlyError, monthName } = useLastMonthLeaders();
@@ -24,11 +17,8 @@ export const VisitorPage = () => {
   const { activeSeason, loading: activeSeasonLoading } = useActiveSeason(false);
   const { seasons, loading: seasonsLoading } = useSeasons(false);
 
-  // ── Dev toggle: ?season=off activates the off-season awards mock ────────────
-  // In production: import.meta.env.DEV === false → always false → dead code.
   const isDevOffSeason = import.meta.env.DEV && searchParams.get('season') === 'off';
 
-  // ── Derived state ─────────────────────────────────────────────────────────
   const realIsOffSeason =
     !activeSeasonLoading && !seasonsLoading && activeSeason === null && seasons.length > 0;
 
@@ -38,17 +28,12 @@ export const VisitorPage = () => {
     ? [...seasons].sort((a, b) => new Date(b.beginDate).getTime() - new Date(a.beginDate).getTime())[0]
     : null;
 
-  // When the dev mock is active, use mockCompletedSeason so headings show the
-  // mock season name. In production this branch is eliminated.
   const completedSeason = isDevOffSeason ? mockCompletedSeason : realCompletedSeason;
 
-  // Pass null when dev mock is active to prevent useSeasonAwards from hitting
-  // Firestore — the mock leaders are used directly instead.
   const { leaders: seasonLeaders, loading: seasonLoading, error: seasonError } = useSeasonAwards(
     isDevOffSeason ? null : (completedSeason?.id ?? null)
   );
 
-  // Apply dev override or real data. mockSeasonLeaders is tree-shaken in prod.
   const leaders = isDevOffSeason
     ? mockSeasonLeaders
     : (isOffSeason ? seasonLeaders : monthlyLeaders);
@@ -320,11 +305,7 @@ export const VisitorPage = () => {
             )}
           </div>
         </div>
-
       </div>
-
-      {/* Dev-only toggle button — tree-shaken out in production build */}
-      {import.meta.env.DEV && <DevSeasonToggle />}
     </div>
   );
 };
