@@ -1,4 +1,5 @@
 import type { Game } from '../../types/basketball.types';
+import { isMatchExcludedFromStats } from '../../utils/gameUtils';
 
 interface MatchListProps {
   games: Game[];
@@ -68,18 +69,24 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {games.map((game) => (
+      {games.map((game) => {
+        const excluded = isMatchExcludedFromStats(game);
+        return (
         <div
           key={game.id}
           onClick={() => onMatchClick(game.id)}
           className="relative group cursor-pointer"
         >
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-cyan-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-300"></div>
+          <div className={`absolute -inset-0.5 bg-gradient-to-r rounded-2xl blur transition duration-300 ${
+            excluded
+              ? 'from-slate-600 via-slate-500 to-slate-600 opacity-20 group-hover:opacity-40'
+              : 'from-orange-500 via-amber-500 to-cyan-500 opacity-30 group-hover:opacity-60'
+          }`}></div>
 
           <div className="relative bg-[#0e1116]/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_30px_-5px_rgba(255,165,0,0.3)] transform transition-all duration-300 hover:scale-105 hover:-translate-y-2">
-            <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-4 py-3">
+            <div className={`px-4 py-3 ${excluded ? 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700' : 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600'}`}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm md:text-base font-black text-white tracking-wide">
                     Maç #{game.gameNumber}
                   </span>
@@ -90,6 +97,14 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
                   >
                     {getStatusText(game.status)}
                   </span>
+                  {excluded && (
+                    <span
+                      title="Bu maç istatistiklere dahil edilmemiştir"
+                      className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/40 text-slate-300 border border-slate-500/50 tracking-wide"
+                    >
+                      İstatistik Dışı
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="text-xs font-medium text-white/90 mt-1.5 flex items-center gap-1">
@@ -146,7 +161,8 @@ export const MatchList = ({ games, onMatchClick }: MatchListProps) => {
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isMatchExcludedFromStats } from '../utils/gameUtils';
 import { useNavigate } from 'react-router-dom';
 import { usePlayers } from '../hooks/usePlayers';
 import { useSeasons } from '../hooks/useSeasons';
@@ -279,9 +280,9 @@ export const AdminPage = () => {
                       <span className="text-sm font-bold text-white">
                         Maç #{game.gameNumber}
                       </span>
-                      {game.countInStats === false && (
+                      {isMatchExcludedFromStats(game) && (
                         <span className="text-[10px] font-bold bg-white/20 text-white px-1.5 py-0.5 rounded">
-                          Stat Dışı
+                          İstatistik Dışı
                         </span>
                       )}
                     </div>
