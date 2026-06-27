@@ -7,7 +7,7 @@
  * is tree-shaken out of the production bundle.
  */
 
-import { useSearchParams } from 'react-router-dom';
+// import { useSearchParams } from 'react-router-dom';
 
 export function DevSeasonToggle() {
   // Hard guard: this component must never render in production.
@@ -16,8 +16,8 @@ export function DevSeasonToggle() {
   if (!import.meta.env.DEV) return null;
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [searchParams, setSearchParams] = useSearchParams();
-  const isOffSeason = searchParams.get('season') === 'off';
+  // const [searchParams, setSearchParams] = useSearchParams();
+  // const isOffSeason = searchParams.get('season') === 'off';
 
   // const toggle = () => {
   //   setSearchParams((prev) => {

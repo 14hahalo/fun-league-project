@@ -91,7 +91,7 @@ export const StatisticsPage = () => {
   const { seasons, loading: seasonsLoading } = useSeasons();
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | 'all'>('all');
   const { leaders: gameLeaders } = useSeasonGameLeaders(selectedSeasonId === 'all' ? null : selectedSeasonId);
-  const [tableLayout, setTableLayout] = useState<'default' | 'compact'>('compact');
+  const [tableLayout] = useState<'default' | 'compact'>('compact');
   const [sortColumn, setSortColumn] = useState<SortColumn>('avgEfficiency');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [aggregatedStats, setAggregatedStats] = useState<AggregatedPlayerStats[]>([]);
