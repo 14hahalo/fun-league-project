@@ -12,7 +12,8 @@ class CacheService {
     TOP_PLAYERS: 600,
     VIDEOS: 1800,
     TEAMS: 1800,
-    SEASONS: 1800
+    SEASONS: 1800,
+    ANALYSIS: 1800
   };
 
   constructor() {
@@ -112,7 +113,7 @@ class CacheService {
     }
   }
 
-  getTTL(type: 'PLAYERS' | 'GAMES' | 'STATS' | 'TOP_PLAYERS' | 'VIDEOS' | 'TEAMS' | 'SEASONS'): number {
+  getTTL(type: 'PLAYERS' | 'GAMES' | 'STATS' | 'TOP_PLAYERS' | 'VIDEOS' | 'TEAMS' | 'SEASONS' | 'ANALYSIS'): number {
     return this.TTL[type];
   }
 
@@ -154,4 +155,6 @@ export const CacheKeys = {
   allSeasons: () => 'seasons:all',
   activeSeason: () => 'seasons:active',
   season: (id: string) => `season:${id}`,
+
+  playerAnalysis: (playerId: string) => `analysis:player:${playerId}`,
 };

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { PlayerStatsService } from "../services/playerStatsService";
 import { TeamStatsService } from "../services/teamStatsService";
+import { playerAnalysisService } from "../services/playerAnalysisService";
 import { CreatePlayerStatsDto } from "../dtos/PlayerStats/CreatePlayerStatsDTO";
 import { UpdatePlayerStatsDto } from "../dtos/PlayerStats/UpdatePlayerStatsDTO";
 
@@ -15,6 +16,9 @@ export class PlayerStatsController {
       const playerStats = await PlayerStatsService.createPlayerStats(data);
 
       await TeamStatsService.generateTeamStats(data.gameId, data.teamType);
+
+      // Oyuncu analizi maç sonucunu beklemeden arka planda yeniden oluşturulur
+      playerAnalysisService.generateAnalysis(data.playerId, data.gameId).catch(() => {});
 
       res.status(201).json({
         success: true,
@@ -108,6 +112,11 @@ export class PlayerStatsController {
         updatedStats.gameId,
         updatedStats.teamType
       );
+
+      // İstatistikler değiştiği için önceki analiz artık güncel değil, yeniden oluşturulur
+      playerAnalysisService
+        .generateAnalysis(updatedStats.playerId, updatedStats.gameId, true)
+        .catch(() => {});
 
       res.status(200).json({
         success: true,

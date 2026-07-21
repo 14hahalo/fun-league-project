@@ -6,6 +6,8 @@ import { gameApi } from '../../api/gameApi';
 import { videoApi } from '../../api/videoApi';
 import { Loading } from '../shared/Loading';
 import { VideoGallery } from '../shared/VideoGallery';
+import { PlayerAnalysisModal } from './PlayerAnalysisModal';
+import { RobotMascot } from './RobotMascot';
 
 interface PlayerDetailsModalProps {
   player: Player;
@@ -22,6 +24,7 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
   const [error, setError] = useState<string | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -299,6 +302,14 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
               </div>
 
               <button
+                onClick={() => setShowAnalysis(true)}
+                title="AI Performans Analizi"
+                className="flex-shrink-0 flex items-center justify-center transition-all group"
+              >
+                <RobotMascot className="w-11 h-11 md:w-14 md:h-14 group-hover:scale-110 transition-transform drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+              </button>
+
+              <button
                 onClick={onClose}
                 className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 flex items-center justify-center transition-all group"
               >
@@ -311,6 +322,14 @@ export const PlayerDetailsModal = ({ player, onClose }: PlayerDetailsModalProps)
 
           <div className="h-0.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent"></div>
         </div>
+
+        {showAnalysis && (
+          <PlayerAnalysisModal
+            playerId={player.id}
+            playerName={player.nickname}
+            onClose={() => setShowAnalysis(false)}
+          />
+        )}
 
         <div className="p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-140px)] custom-scrollbar">
           {player.badges && Object.keys(player.badges).length > 0 && (

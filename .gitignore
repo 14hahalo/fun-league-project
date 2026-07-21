@@ -39,6 +39,7 @@ pnpm-debug.log*
 !/**/nodemon.json
 !/tailwind.config.js
 !/postcss.config.js
+!/firestore.indexes.json
 
 # === OS files ===
 .DS_Store
@@ -87,5 +88,4 @@ coverage/
 *.bak
 *.orig
 .vercel
-firestore.rules
 .env*.local

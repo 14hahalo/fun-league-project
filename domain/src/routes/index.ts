@@ -11,6 +11,7 @@ import seasonRoutes from './seasonRoutes';
 import comparisonLogRoutes from './comparisonLogRoutes';
 import matchEventLogRoutes from './matchEventLogRoutes';
 import simulationRoutes from './simulationRoutes';
+import adminAnalysisRoutes from './adminAnalysisRoutes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/seasons', seasonRoutes);
 router.use('/comparison-logs', comparisonLogRoutes);
 router.use('/match-event-logs', matchEventLogRoutes);
 router.use('/simulation', simulationRoutes);
+router.use('/admin/analysis', adminAnalysisRoutes);
 
 export default router;

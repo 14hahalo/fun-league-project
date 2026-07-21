@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// NOTE: This repo has no tracked firestore.rules — the deployed ruleset is
+// managed directly in the Firebase console and this file did not previously
+// exist here. The app's frontend never talks to Firestore directly (all
+// reads/writes go through the Express API using the Admin SDK, which bypasses
+// these rules entirely), so this file is not currently deployed and has no
+// effect on production until someone runs `firebase deploy --only firestore:rules`.
+//
+// Do NOT deploy this as-is — it only defines the `playerAnalysis` collection.
+// Merge the block below into whatever ruleset is currently live in the
+// console before deploying, so other collections aren't accidentally locked
+// down or opened up.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // playerAnalysis: clients may only read (via the API's public GET
+    // endpoints proxying through Admin SDK, or direct reads if ever added).
+    // All writes happen exclusively server-side via the Admin SDK, which is
+    // not subject to these rules — this `allow write: if false` is
+    // defense-in-depth in case direct client Firestore access is ever added.
+    match /playerAnalysis/{analysisId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
