@@ -7,7 +7,58 @@ import { PlayerAnalysis, StructuredInsights } from '../models/PlayerAnalysis';
 import { PlayerStatsService } from './playerStatsService';
 
 const ANALYSIS_MODEL = 'gpt-4o-mini';
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
+
+// All OpenAI calls for player analysis funnel through this queue so that a burst of
+// triggers (e.g. every player in a freshly-submitted match firing generateAnalysis at
+// once, or an admin "regenerate all" run) never fires more than a couple of requests at
+// the same time. Without this, ~10 concurrent calls (a full 5v5 match) could blow past
+// the account's requests-per-minute limit — the first few would succeed and the rest
+// would 429 and (previously) fail silently, which is why analysis only ever "worked for
+// 5 players".
+class AnalysisQueue {
+  private queue: Array<() => Promise<void>> = [];
+  private active = 0;
+  private lastDispatch = 0;
+  private readonly concurrency = 2;
+  private readonly spacingMs = 400;
+
+  enqueue<T>(task: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          resolve(await task());
+        } catch (err) {
+          reject(err);
+        }
+      });
+      this.drain();
+    });
+  }
+
+  private drain(): void {
+    while (this.active < this.concurrency && this.queue.length > 0) {
+      const next = this.queue.shift()!;
+      this.active++;
+      this.run(next);
+    }
+  }
+
+  private async run(task: () => Promise<void>): Promise<void> {
+    const wait = Math.max(0, this.spacingMs - (Date.now() - this.lastDispatch));
+    if (wait > 0) await sleep(wait);
+    this.lastDispatch = Date.now();
+
+    try {
+      await task();
+    } finally {
+      this.active--;
+      this.drain();
+    }
+  }
+}
+
+const analysisQueue = new AnalysisQueue();
 
 interface MatchSummary {
   date: string;
@@ -356,7 +407,11 @@ ${JSON.stringify(summary)}
       }
 
       if (attempt < MAX_RETRIES) {
-        await sleep(500 * Math.pow(3, attempt));
+        const isRateLimited = lastError instanceof OpenAI.APIError && lastError.status === 429;
+        // Rate limits reset on a ~60s window, so a 429 needs a much longer wait than a
+        // transient error — the old fixed 500ms/1.5s backoff barely dented an RPM cap.
+        const delay = isRateLimited ? 4000 * Math.pow(2, attempt) : 500 * Math.pow(3, attempt);
+        await sleep(delay);
       }
     }
 
@@ -383,7 +438,7 @@ ${JSON.stringify(summary)}
     const summary = await this.buildCompactSummary(playerId);
     if (!summary) return false;
 
-    const insights = await this.callOpenAIWithRetry(summary);
+    const insights = await analysisQueue.enqueue(() => this.callOpenAIWithRetry(summary));
 
     return db.runTransaction(async (tx) => {
       const freshActiveSnap = await tx.get(
@@ -416,15 +471,65 @@ ${JSON.stringify(summary)}
     });
   },
 
-  async generateAnalysis(playerId: string, lastMatchId: string | null, force: boolean = false): Promise<void> {
+  // Returns whether an analysis was actually written, so bulk callers (regenerateAllPlayers)
+  // can report success/failure counts. Never throws — failures are logged and persisted
+  // via recordFailure instead, since this is called fire-and-forget from the per-match
+  // stats trigger and a thrown error there would just be swallowed anyway.
+  async generateAnalysis(playerId: string, lastMatchId: string | null, force: boolean = false): Promise<boolean> {
     try {
       const wrote = await this._generateAndWrite(playerId, lastMatchId, force);
       if (wrote) {
         await cacheService.invalidate(CacheKeys.playerAnalysis(playerId));
+        await this.clearFailure(playerId);
       }
+      return wrote;
     } catch (error) {
       console.error(`Oyuncu analizi oluşturulamadı (playerId=${playerId}):`, error);
+      await this.recordFailure(playerId, lastMatchId, error);
+      return false;
     }
+  },
+
+  // Failures are persisted (rather than only console.error'd) so they're visible
+  // somewhere other than the OpenAI usage dashboard — the admin UI reads this to show
+  // which players still need a retry after a bulk regenerate/backfill run.
+  async recordFailure(playerId: string, lastMatchId: string | null, error: unknown): Promise<void> {
+    try {
+      const message = error instanceof Error ? error.message : String(error);
+      await db.collection('playerAnalysisFailures').doc(playerId).set({
+        playerId,
+        lastMatchId,
+        lastError: message,
+        lastAttemptAt: FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      console.error(`Analiz hatası kaydedilemedi (playerId=${playerId}):`, e);
+    }
+  },
+
+  async clearFailure(playerId: string): Promise<void> {
+    try {
+      await db.collection('playerAnalysisFailures').doc(playerId).delete();
+    } catch {
+      // best-effort cleanup, ignore
+    }
+  },
+
+  async getFailures(): Promise<
+    { playerId: string; lastError: string; lastMatchId: string | null; lastAttemptAt: Date }[]
+  > {
+    const snap = await db.collection('playerAnalysisFailures').get();
+    return snap.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          playerId: data.playerId,
+          lastError: data.lastError,
+          lastMatchId: data.lastMatchId ?? null,
+          lastAttemptAt: data.lastAttemptAt?.toDate?.() || new Date(),
+        };
+      })
+      .sort((a, b) => b.lastAttemptAt.getTime() - a.lastAttemptAt.getTime());
   },
 
   async getLatestMatchIdForPlayer(playerId: string): Promise<string | null> {
@@ -450,19 +555,24 @@ ${JSON.stringify(summary)}
     await this.generateAnalysis(playerId, lastMatchId, true);
   },
 
-  async regenerateAllPlayers(): Promise<{ triggered: number }> {
+  async regenerateAllPlayers(): Promise<{ triggered: number; succeeded: number; failed: number }> {
     const playersSnap = await db.collection('players').where('isActive', '==', true).get();
-    let triggered = 0;
 
+    const targets: { playerId: string; lastMatchId: string }[] = [];
     for (const doc of playersSnap.docs) {
       const lastMatchId = await this.getLatestMatchIdForPlayer(doc.id);
-      if (!lastMatchId) continue;
-
-      await this.generateAnalysis(doc.id, lastMatchId, true);
-      triggered++;
+      if (lastMatchId) targets.push({ playerId: doc.id, lastMatchId });
     }
 
-    return { triggered };
+    // Fire every player's analysis concurrently — safe because generateAnalysis routes
+    // its actual OpenAI call through the shared analysisQueue, which caps concurrency and
+    // spaces out requests regardless of how many are dispatched here at once.
+    const results = await Promise.all(
+      targets.map(({ playerId, lastMatchId }) => this.generateAnalysis(playerId, lastMatchId, true))
+    );
+
+    const succeeded = results.filter(Boolean).length;
+    return { triggered: targets.length, succeeded, failed: targets.length - succeeded };
   },
 
   // One-time backfill: generates an initial analysis for every player who has at least
@@ -494,42 +604,38 @@ ${JSON.stringify(summary)}
 
     let processed = 0;
     const failed: { playerId: string; error: string }[] = [];
-    const CONCURRENCY = 3;
-    const DELAY_MS = 500;
 
-    for (let i = 0; i < candidates.length; i += CONCURRENCY) {
-      const chunk = candidates.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(
-        chunk.map(async (playerId) => {
-          // Backfill runs have no triggering match, per spec lastMatchId is null here.
-          const wrote = await this._generateAndWrite(playerId, null, false);
-          if (wrote) {
-            await cacheService.invalidate(CacheKeys.playerAnalysis(playerId));
-          }
-          return wrote;
-        })
-      );
-
-      results.forEach((result, idx) => {
-        const playerId = chunk[idx];
-        if (result.status === 'fulfilled') {
-          if (result.value) {
-            processed++;
-          } else {
-            skipped++;
-          }
-        } else {
-          const reason = result.reason;
-          const message = reason instanceof Error ? reason.message : String(reason);
-          failed.push({ playerId, error: message });
-          console.error(`Backfill başarısız (playerId=${playerId}):`, reason);
+    // Dispatch every candidate at once — analysisQueue (shared with the live per-match
+    // trigger and regenerateAllPlayers) is what actually paces the OpenAI calls, so no
+    // bespoke chunking/sleeping is needed here anymore.
+    const results = await Promise.allSettled(
+      candidates.map(async (playerId) => {
+        // Backfill runs have no triggering match, per spec lastMatchId is null here.
+        const wrote = await analysisQueue.enqueue(() => this._generateAndWrite(playerId, null, false));
+        if (wrote) {
+          await cacheService.invalidate(CacheKeys.playerAnalysis(playerId));
+          await this.clearFailure(playerId);
         }
-      });
+        return wrote;
+      })
+    );
 
-      if (i + CONCURRENCY < candidates.length) {
-        await sleep(DELAY_MS);
+    results.forEach((result, idx) => {
+      const playerId = candidates[idx];
+      if (result.status === 'fulfilled') {
+        if (result.value) {
+          processed++;
+        } else {
+          skipped++;
+        }
+      } else {
+        const reason = result.reason;
+        const message = reason instanceof Error ? reason.message : String(reason);
+        failed.push({ playerId, error: message });
+        console.error(`Backfill başarısız (playerId=${playerId}):`, reason);
+        this.recordFailure(playerId, null, reason).catch(() => {});
       }
-    }
+    });
 
     return { processed, skipped, failed };
   },

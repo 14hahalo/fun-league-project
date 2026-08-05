@@ -47,4 +47,19 @@ export class AdminAnalysisController {
       next(error);
     }
   }
+
+  // Lets the admin UI see which players failed their last analysis attempt (e.g. rate
+  // limited during a bulk regenerate) without having to check the OpenAI dashboard.
+  static async getFailures(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const failures = await playerAnalysisService.getFailures();
+
+      res.status(200).json({
+        success: true,
+        data: failures,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -13,6 +13,7 @@ import { AddMatchStatsModal } from '../components/admin/AddMatchStatsModal';
 import { EditMatchStatsModal } from '../components/admin/EditMatchStatsModal';
 import { SetPasswordModal } from '../components/admin/SetPasswordModal';
 import { BuildTeamsModal } from '../components/admin/BuildTeamsModal';
+import { AnalysisManagementModal } from '../components/admin/AnalysisManagementModal';
 import { PlayerTotalStatsTable } from '../components/admin/PlayerTotalStatsTable';
 import { Loading } from '../components/shared/Loading';
 import { playerApi } from '../api/playerApi';
@@ -35,6 +36,7 @@ export const AdminPage = () => {
   const [editingGameId, setEditingGameId] = useState<string | null>(null);
   const [settingPasswordFor, setSettingPasswordFor] = useState<Player | null>(null);
   const [showBuildTeamsModal, setShowBuildTeamsModal] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
   const handleCreatePlayer = async (data: CreatePlayerDto | UpdatePlayerDto) => {
     await createPlayer(data as CreatePlayerDto);
@@ -160,6 +162,12 @@ export const AdminPage = () => {
             🤖 AI Takım Oluştur
           </button>
           <button
+            onClick={() => setShowAnalysisModal(true)}
+            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg"
+          >
+            🧠 AI Analiz Yönetimi
+          </button>
+          <button
             onClick={() => setShowMatchStatsModal(true)}
             className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
@@ -251,6 +259,12 @@ export const AdminPage = () => {
       <BuildTeamsModal
         isOpen={showBuildTeamsModal}
         onClose={() => setShowBuildTeamsModal(false)}
+      />
+
+      <AnalysisManagementModal
+        isOpen={showAnalysisModal}
+        onClose={() => setShowAnalysisModal(false)}
+        players={players}
       />
 
       {matchStatsLoading && (

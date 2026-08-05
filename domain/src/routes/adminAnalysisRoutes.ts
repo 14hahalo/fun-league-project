@@ -7,6 +7,7 @@ const router = Router();
 
 router.post('/backfill', authMiddleware, requireAdmin, AdminAnalysisController.backfill);
 router.post('/regenerate/all', authMiddleware, requireAdmin, AdminAnalysisController.regenerateAll);
+router.get('/failures', authMiddleware, requireAdmin, AdminAnalysisController.getFailures);
 router.post('/regenerate/:playerId', authMiddleware, requireAdmin, AdminAnalysisController.regeneratePlayer);
 
 export default router;

@@ -1,5 +1,5 @@
 import apiClient from './axiosConfig';
-import type { PlayerAnalysis, PlayerAnalysisHistory } from '../types/playerAnalysis.types';
+import type { PlayerAnalysis, PlayerAnalysisHistory, PlayerAnalysisFailure } from '../types/playerAnalysis.types';
 
 export const playerAnalysisApi = {
   async getActiveAnalysis(playerId: string): Promise<PlayerAnalysis | null> {
@@ -24,6 +24,11 @@ export const playerAnalysisApi = {
 
   async backfill(): Promise<{ processed: number; skipped: number; failed: { playerId: string; error: string }[] }> {
     const response = await apiClient.post('/admin/analysis/backfill');
+    return response.data.data;
+  },
+
+  async getFailures(): Promise<PlayerAnalysisFailure[]> {
+    const response = await apiClient.get('/admin/analysis/failures');
     return response.data.data;
   },
 };

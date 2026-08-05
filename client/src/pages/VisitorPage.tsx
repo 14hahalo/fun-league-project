@@ -5,6 +5,7 @@ import { useActiveSeason } from '../hooks/useActiveSeason';
 import { useSeasons } from '../hooks/useSeasons';
 import { useTopPlays } from '../hooks/useTopPlays';
 import { FIFAPlayerCard } from '../components/visitor/FIFAPlayerCard';
+import { SeasonCountdownTimer } from '../components/visitor/SeasonCountdownTimer';
 import { TopPlaysCarousel } from '../components/visitor/TopPlaysCarousel';
 import { Loading } from '../components/shared/Loading';
 import { mockCompletedSeason, mockSeasonLeaders } from '../dev/seasonMockData';
@@ -55,9 +56,7 @@ export const VisitorPage = () => {
           </h1>
           {isOffSeason ? (
             <>
-              <p className="text-xl md:text-2xl text-gray-300 font-semibold">
-                {completedSeason?.name} Sezonu Ödülleri
-              </p>
+              
               <div className="mt-4 flex items-center justify-center gap-3">
                 <div className="h-[2px] w-24 bg-gradient-to-r from-transparent to-yellow-500"></div>
                 <span className="text-yellow-400 text-sm uppercase tracking-widest font-bold">
@@ -65,6 +64,7 @@ export const VisitorPage = () => {
                 </span>
                 <div className="h-[2px] w-24 bg-gradient-to-l from-transparent to-yellow-500"></div>
               </div>
+              <SeasonCountdownTimer />
             </>
           ) : (
             <>
@@ -90,7 +90,7 @@ export const VisitorPage = () => {
 
         <div className="mb-20">
           <h2 className="text-center text-2xl md:text-4xl font-black text-white mb-8 md:mb-12 uppercase tracking-wide">
-            {isOffSeason ? '🏆 SEZON EN VERİMLİ 3 OYUNCU 🏆' : '🏆 EN VERİMLİ 3 OYUNCU 🏆'}
+            {isOffSeason ? '🏆 25-26 SEZONU EN VERİMLİ 3 OYUNCU 🏆' : '🏆 EN VERİMLİ 3 OYUNCU 🏆'}
           </h2>
 
           <div className="hidden md:flex items-end justify-center gap-4 lg:gap-8 max-w-5xl mx-auto">

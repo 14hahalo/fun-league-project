@@ -25,3 +25,10 @@ export interface PlayerAnalysisHistory {
   page: number;
   pageSize: number;
 }
+
+export interface PlayerAnalysisFailure {
+  playerId: string;
+  lastError: string;
+  lastMatchId: string | null;
+  lastAttemptAt: string;
+}
